@@ -1,0 +1,46 @@
+baseurl = "https://blog.earo.me/"
+title = "random thoughts"
+theme = "ghostwriter"
+languageCode = "en-us"
+copyright = "Earo Wang"
+disqusShortname = "earowang"
+googleAnalytics = "UA-83007123-2"
+ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
+
+[Author]
+    name = "Earo Wang"
+    profile = "https://earo.me"
+
+[Taxonomies]
+    tag = "tags"
+
+[Params]
+    intro = true
+    headline = "epsilon"
+    description = "random thoughts on odds and ends"
+    github = "https://github.com/earowang"
+    gitlab = ""
+    linkedin = ""
+    gplus = ""
+    twitter = "https://twitter.com/earowang"
+    stackoverflow = ""
+    email = "earo.wang@gmail.com"
+    opengraph = false
+    shareTwitter = false
+    shareFacebook = false
+    shareGooglePlus = false
+    shareLinkedIn = false
+    dateFormat = "Mon, Jan 2, 2006"
+
+[Permalinks]
+    post = "/:year/:month/:day/:filename/"
+
+[[menu.main]]
+    name = "Blog"
+    url = "/"
+    weight = 1
+
+[[menu.main]]
+    name = "About"
+    url = "https://earo.me"
+    weight = 2

@@ -1,0 +1,34 @@
+---
+title: "The grammar of graphics"
+description: "Thoughts on 'The grammar of graphics'"
+draft: true
+date: "2017-05-31"
+tags: ["book", "graphics"]
+---
+
+
+
+<p><code>ggplot2</code> has probably been a standard tool to make statistical graphics in the R community over years. If one is asked why using <code>ggplot2</code>, you may receive answers like “it makes graphs look pretty”. <code>ggplot2</code> is yet more than that. The first two letters <code>gg</code> is the abbreviation of “grammar of graphics”, which implies that there’s statistical thinking underlying plots. The idea/framework originated from Leland Wikinson who wrote the book “The Grammar of Graphics” in 1999, and was further extended and implemented by Hadley Wickham, the author of <code>ggplot2</code>.</p>
+<pre class="r"><code>plot(rnorm(100), rnorm(100))</code></pre>
+<p><img src="/post/grammar-of-graphics_files/figure-html/test-1.png" width="672" /></p>
+<pre class="r"><code>rnorm(100)</code></pre>
+<pre><code>##   [1] -0.86564080  1.20800077 -0.02222783  0.06682818  1.21149794
+##   [6] -0.91249843  1.14488427 -0.86474645 -1.25164351 -0.97334950
+##  [11]  0.13417414 -0.53641054 -0.06211726 -0.09493405 -1.30899720
+##  [16]  0.67138840  0.22090481 -0.47715185  1.75807117  0.15215205
+##  [21]  0.27345372  1.18797598 -1.40325472  0.72190402 -0.32061132
+##  [26]  2.59640162 -0.93414021  1.61885834  0.32978060  0.87646463
+##  [31] -0.57017400  1.49439749 -0.63106417 -0.11710664  0.26831886
+##  [36] -1.33290162 -1.56501501 -0.56984493  1.09050493  0.38905987
+##  [41] -0.90580067 -0.55849763  0.59570217 -0.66331619 -0.70580476
+##  [46]  0.64833405  0.92525779 -0.72638348 -0.17160350  1.27752789
+##  [51] -2.22603263  0.07490911 -1.74727992 -0.56357883  0.48908892
+##  [56] -0.40019988 -0.39303006  0.23118833 -1.16485576 -1.19893473
+##  [61] -1.01727692  1.10521749 -0.11280171 -0.40400524 -0.25984301
+##  [66]  0.38126567 -0.69418747  0.04322429 -0.22426615 -0.72758328
+##  [71]  1.64447115  0.38264786  0.56326429  0.36962126 -0.80717828
+##  [76] -0.50257666  0.99296954  0.09657110  1.18657543 -1.91141478
+##  [81]  0.60890486  0.17847610  1.69257430  0.61747357  1.24784660
+##  [86] -0.11452028 -0.59102783  2.31269353 -1.45110154 -0.79745206
+##  [91]  0.24346824  0.19184840 -2.31828530 -0.36669432 -0.30907814
+##  [96] -0.62747459  0.25134591 -0.45786553  0.66604363 -0.20381253</code></pre>
