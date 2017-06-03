@@ -1,5 +1,5 @@
 baseurl = "https://blog.earo.me/"
-title = "random thoughts"
+title = "epsilon"
 theme = "ghostwriter"
 languageCode = "en-us"
 copyright = "Earo Wang"
@@ -16,7 +16,7 @@ ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
 
 [Params]
     intro = true
-    headline = "epsilon"
+    headline = "doughnut"
     description = "random thoughts on odds and ends"
     github = "https://github.com/earowang"
     gitlab = ""
