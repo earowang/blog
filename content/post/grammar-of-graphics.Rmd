@@ -1,9 +1,11 @@
 ---
-title: "The grammar of graphics"
+title: "ggplot2 and the grammar of graphics"
 description: "Thoughts on 'The grammar of graphics'"
 draft: true
 date: "`r Sys.Date()`"
 tags: ["book", "graphics"]
 ---
 
-`ggplot2` has probably been a standard tool to make statistical graphics in the R community over years. If one is asked why using `ggplot2`, you may receive answers like "it makes graphs look pretty". `ggplot2` is yet more than that. The first two letters `gg` is the abbreviation of "grammar of graphics", which implies that there's statistical thinking underlying plots. The idea/framework originated from Leland Wikinson who wrote the book "The Grammar of Graphics" in 1999, and was further extended and implemented by Hadley Wickham, the author of `ggplot2`.
+*ggplot2* has probably been a standard tool to craft statistical graphics in the R community over years. If one is asked why using *ggplot2*, you may receive answers like "it makes graphs look pretty". *ggplot2* is yet more than that. The first two letters *gg* is the abbreviation of "grammar of graphics", which implies that there's statistical thinking underlying plots. This framework originated from Leland Wikinson who wrote the book "The Grammar of Graphics" in 1999, and was further developed and implemented by Hadley Wickham, the author of *ggplot2*. Recently my day has started with some reading of "The Grammar of Graphics", which blew my mind and gained new perspectives in all aspects. It's not constrained to statistical graphics, but sheds light on a broad range of topics including objected oriented design (OOD), data structure, statistics, and etc.
+
+Wikinson's book on graphic grammar and variable mappings fuels the flourish of *ggplot2* and the *tidyverse* ecosystem.
