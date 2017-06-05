@@ -116,7 +116,7 @@ table tr { border-bottom: 1px dotted #aeadad; }
 .site-title-wrapper { display: table; margin: 0 auto; }
 .site-title { float: left; font-size: 14px; font-weight: 600; margin: 0; text-transform: uppercase; }
 .site-title a { float: left; background: #f03838; color: #fefefe; padding: 5px 10px 6px; }
-.site-title a:hover { background: #303030; }
+.site-title a:hover { background: rgb(18, 11, 49); }
 .site-logo { display: block; }
 .site-logo img { margin: 0; }
 .site-nav { list-style: none; margin: 28px 0 10px; padding: 0; }
