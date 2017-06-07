@@ -10,4 +10,12 @@ tags: ["book", "graphics"]
 
 ## Graphics vs charts
 
+> What is a pie chart? 
+>
+> Hmm, a pie chart is ... (thinking hard `r emo::ji("thinking")`, and  a couple minutes later) Oh, do you mean a pie plus a chart? `r emo::ji("wink")`
+
+This sort of conversation occurred to me, and I didn't know how to actually describe a pie chart at that moment. Well, I knew how to read a pie chart but was unaware of what defines it and how to make it from scratch. Although the conversation was brief and short, it made me get started with **The Grammar of Graphics**.
+
+Many terms have been invented for referring to this and that graphics, such as pie charts, histograms, rose plots, and so on. The vocabulary bank will expand as new charts are created. It's not a problem about the increased number of new words, but our understanding of graphics would remain shallow if simply using the *building-vocabulary* approach.
+
 ## Data structure
