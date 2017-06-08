@@ -12,10 +12,12 @@ tags: ["book", "graphics"]
 
 > What is a pie chart? 
 >
-> Hmm, a pie chart is ... (thinking hard `r emo::ji("thinking")`, and  a couple minutes later) Oh, do you mean a pie plus a chart? `r emo::ji("wink")`
+> Hmm, a pie chart is ... (thinking hard `r emo::ji("thinking")`, and a couple minutes later) Oh, do you mean a pie plus a chart? `r emo::ji("wink")`
 
-This sort of conversation occurred to me, and I didn't know how to actually describe a pie chart at that moment. Well, I knew how to read a pie chart but was unaware of what defines it and how to make it from scratch. Although the conversation was brief and short, it made me get started with **The Grammar of Graphics**.
+This sort of conversation occurred to me, and I didn't know how to actually describe a pie chart at that moment. Well, I knew how to read a pie but was unaware of what defines it and how to make it from scratch. Although the conversation was brief and short, it made me get started with **The Grammar of Graphics**.
 
-Many terms have been invented to refer to this and that graphics, such as pie charts, histograms, rose plots, and so on. The vocabulary bank will expand as new charts are created. It's not a problem about the increased number of new words, but our understanding of graphics would remain shallow if simply using the *building-vocabulary* approach.
+Many terms have been invented for this and that graphics, such as pie charts, histograms, rose plots, and so on. The vocabulary bank will expand as new charts are created. It's not a problem about the increased number of new words, but our understanding of graphics would remain shallow if simply using the *building-vocabulary* approach. These terms could also be a hindrance in spotting the differences between two kinds of charts. For example, what's the difference between pie charts and stacked bar charts? If it takes some time to figure out an answer, here's indeed the ground where the grammar of graphics pops in and sparks off. **A pie is a stacked bar in polar coordinates.** How straightforward it is! But the statement is made from a graphic perspective rather than a chart view. A graphic can be decomposed into a set of instances of graphics including geometry, scales, coordinates, and etc. By doing so, it provides shorthand but comprehensive vocabulary to describe and create an array of various graphics. To make a pie,
+
+The grammar lends itself to OOD.
 
 ## Data structure
