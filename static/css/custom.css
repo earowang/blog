@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css?family=Source+Code+Pro');
+
+pre { font-family: 'Source Code Pro', monospace; font-size: 1em; }
+code, kbd, samp { font-family: 'Source Code Pro', monospace; font-size: 1em; }
+.button:hover { background: rgb(18, 11, 49); }
+.button-square { background: #f03838; color: #fff; float: left; font-size: 17px; margin: 0 0 0 10px; padding: 3px 8px 4px; }
+.button-square:hover { background: rgb(18, 11, 49); }
+.site-title a:hover { background: rgb(18, 11, 49); }
+.site-nav-item a:hover { color: rgb(18, 11, 49); }
+.post-header { border-bottom: 6px solid #303030; margin: 0 0 20px; padding: 0 0 20px; text-align: center; text-transform: none; }
+.post-title, .page-title { font-size: 52px; font-weight: 700; margin: 15px 0; text-align: center; text-transform: none; }
+.footer { background: rgb(18, 11, 49); color: #d3d3d3; height: 265px; margin-top: 95px; overflow: auto; }

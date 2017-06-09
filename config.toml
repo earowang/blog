@@ -31,6 +31,7 @@ ignoreFiles = ["\\.Rmd$", "_files$", "_cache$"]
     shareGooglePlus = false
     shareLinkedIn = false
     dateFormat = "Mon, Jan 2, 2006"
+    custom_css = ["css/custom.css"]
 
 [Permalinks]
     post = "/:year/:month/:day/:filename/"
