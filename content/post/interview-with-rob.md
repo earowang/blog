@@ -2,9 +2,9 @@
 date = "2014-01-26T00:00:00"
 draft = false
 tags = ["research", "interview"]
-title = "An Interview With Rob J Hyndman"
+title = "Interview with Rob J Hyndman"
 description = """
-An interview with Professor Rob J Hyndman at Monash University.
+Interview with Professor Rob J Hyndman at Monash University.
 """
 math = false
 +++

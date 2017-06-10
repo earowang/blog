@@ -2,7 +2,7 @@
 date = "2012-12-28T00:00:00"
 draft = false
 tags = ["book", "data"]
-title = "Data Analysis, From Numbers To Insights"
+title = "Data analysis, from numbers to insights"
 description = """
 A couple of thoughts on "data analysis with open source tools".
 """

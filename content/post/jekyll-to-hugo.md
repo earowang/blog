@@ -2,7 +2,7 @@
 date = "2017-05-21T15:46:00"
 draft = false
 tags = ["life"]
-title = "Jekyll to Hugo, Undergraduate to Postgraduate"
+title = "Jekyll to Hugo, undergraduate to postgraduate"
 description = """
 A brief summary of what I've done while switching to Hugo.
 """
