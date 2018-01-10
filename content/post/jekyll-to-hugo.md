@@ -1,6 +1,6 @@
 +++
 date = "2017-05-21T15:46:00"
-draft = false
+draft = true
 tags = ["life"]
 title = "Jekyll to Hugo, undergraduate to postgraduate"
 description = """
