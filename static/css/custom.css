@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css?family=Source+Code+Pro');
 
-pre { font-family: 'Source Code Pro', monospace; font-size: 1em; }
-code, kbd, samp { font-family: 'Source Code Pro', monospace; font-size: 1em; }
+pre { font-family: 'Source Code Pro', monospace; font-size: 0.9em; }
+code, kbd, samp { font-family: 'Source Code Pro', monospace; font-size: 0.9em; }
 .button:hover { background: rgb(18, 11, 49); }
 .button-square { background: #f03838; color: #fff; float: left; font-size: 17px; margin: 0 0 0 10px; padding: 3px 8px 4px; }
 .button-square:hover { background: rgb(18, 11, 49); }
