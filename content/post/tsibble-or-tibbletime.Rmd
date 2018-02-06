@@ -11,15 +11,13 @@ options(tibble.print_min = 5)
 Sys.setenv(TZ = "")
 ```
 
-First of all, **tsibble** is pronounced as */ˈt͡sɪbəl/*, where "ts" is like in "tsunami" [^1]. Second, a tsibble (or `tbl_ts`) is a modern reimagining of time series data. The goal of the tsibble is to easily wrangle, visualise, forecast time series in R, where time series means data indexed in time order.
+First of all, **tsibble** is pronounced */ˈt͡sɪbəl/*, where "ts" is like in "cats". Second, a tsibble (or `tbl_ts`) is a modern reimagining of time series data. The goal of tsibble is to easily wrangle, visualise, forecast time series in R, where time series are defined as data indexed in time order.
 
-[^1]: [Thomas Lumley's suggestion on tsibble](https://twitter.com/tslumley/status/960334251823640577)
-
-The development of tsibble has been happening for about half a year, motivated by needing to better bridge data with the time series modeling packages [forecast](http://pkg.robjhyndman.com/forecast) and [hts](http://pkg.earo.me/hts/) (which I developed as an undergraduate student working with [Rob J Hyndman](https://robjhyndman.com)). I was pleasantly surprised when the package--tibbletime (`tbl_time`)--was announced on twitter.
+The development of tsibble has been happening for about half a year, motivated by needing to better bridge data with the time series modeling packages [forecast](http://pkg.robjhyndman.com/forecast) and [hts](http://pkg.earo.me/hts/) (which I developed as an undergraduate student working with [Rob J Hyndman](https://robjhyndman.com)). I was pleasantly surprised when the package [tibbletime](https://github.com/business-science/tibbletime) (or `tbl_time`) was announced on twitter.
 
 So what do these two packages have in common?
 
-1. The data class is built on top of the tibble, providing an immediate advantage of handling heterogeneous data types and supporting dplyr verbs. 
+1. The primary data class in each package is built on top of the tibble (or `tbl_df`)  class, providing an immediate advantage of handling heterogeneous data types and supporting dplyr verbs. 
 2. The time indices are explicitly declared as a data column instead of implicitly inferred as attributes in the `ts`, `xts` and `zoo` objects.
 
 Beyond this, the packages deviate. I'll walk through those differences using the `weather` dataset from the `nycflights13` package. The latest CRAN versions (tsibble v0.1.2 and tibbletime v0.1.1) are used.
@@ -35,14 +33,14 @@ weather <- nycflights13::weather %>%
 weather
 ```
 
-To demonstrate the difference in coercion, we use a subset of the `weather`, that includes weather stations (`origin`), hourly timestamps (`time_hour`), temperature and precipitation. It is a tibble (`tbl_df`). To coerce to a `tbl_time`, it is sufficient to specify the `index` in `as_tbl_time()`.
+To demonstrate the difference in coercion, we use a subset of `weather`, that includes weather stations (`origin`), hourly timestamps (`time_hour`), temperature and precipitation. It is a tibble (`tbl_df`). To coerce to a `tbl_time`, it is sufficient to specify the `index` in `as_tbl_time()`.
 
 ```{r coerce}
 # tibbletime
 weather_time <- as_tbl_time(weather, index = time_hour)
 ```
 
-In contrast, `tbl_ts` from tsibble is a strict object (or stricter than `tbl_time`), and would throw an invalid tsibble error, because **each observation must be uniquely identified by the index and key.** The "key" provides a way to impose structures, which allows separation of multiple time series in one dataset. In this data example, the identifying variable `origin` is passed to the `key` argument via `id()`. Tsibble requires tidied data without duplicates in the time indices for each key.
+In contrast, `tbl_ts` from tsibble is a stricter object than `tbl_time`, because **each observation must be uniquely identified by the index and key.** The "key" provides a way to impose structures, which allows separation of multiple time series in one dataset. In this data example, the identifying variable `origin` is passed to the `key` argument via `id()`. Tsibble requires tidied data without duplicates in the time indices for each key.
 
 ```{r tsibble, error = TRUE}
 # tsibble
@@ -50,7 +48,7 @@ weather_tsbl <- as_tsibble(weather, index = time_hour)
 weather_tsbl <- as_tsibble(weather, key = id(origin), index = time_hour)
 ```
 
-The `tbl_time` and `tbl_ts` for the `weather` data are created as `weather_time` and `weather_tsbl` respectively. The headers in the print results reveal another difference. Under the hood, tsibble automatically computes the time interval of data from the index. It figures out that it's hourly data (see `[1HOUR]` in the summary). This would greatly enhance the functionality for time series models and visualisation, since time series frequency is critical. In addition, tsibble displays the keys and the number of unique keys, instead of the "index" in tibbletime.
+The `tbl_time` and `tbl_ts` objects for the `weather` data are saved as `weather_time` and `weather_tsbl` respectively. The headers in the print results reveal another difference. Under the hood, tsibble automatically computes the time interval of data from the index. It figures out that it's hourly data (see `[1HOUR]` in the summary). This will greatly enhance the functionality for time series models and visualisation, since time series frequency is critical in determining what model to estimate, or what plot to create. In addition, tsibble displays the keys and the number of unique keys, instead of the "index" in tibbletime.
 
 ```{r print}
 weather_time
@@ -59,9 +57,9 @@ weather_tsbl
 
 ## Implicit missing values
 
-Temporal data often has missing timestamps. Tsibble provides a helper function to make these missing timestamps explicit, but tibbletime doesn't currently have similar capabilities. 
+Temporal data often has missing timestamps. Tsibble provides a helper function `fill_na()` to make these missing timestamps explicit, but tibbletime doesn't currently have similar capabilities. 
 
-For data with regular time intervals, implicit missings can be made explicit using `fill_na()`. Alternatively, missings can be imputed using a prescribed value. For example, precipitation is likely to be 0 if not reported, and this is imputed using a name-value pair `precip = 0`. Simultaneously, a corresponding `NA` fills the temperature slot. Another subtle change is the increase in the number of rows from filling in the time gaps.
+For data with regular time intervals, implicit missings can be made explicit using `fill_na()`. Alternatively, missings can be imputed using a prescribed value. For example, precipitation is likely to be 0, and this is imputed using a name-value pair `precip = 0`. Simultaneously, a corresponding `NA` fills the temperature slot. Another subtle change is the increase in the number of rows from filling in the time gaps.
 
 ```{r fill-na}
 weather_tsbl <- weather_tsbl %>%
@@ -69,7 +67,7 @@ weather_tsbl <- weather_tsbl %>%
 weather_tsbl
 ```
 
-The function `fill()` is re-exported from tidyr and used to replace explicit missing values with the previous or next observation. The previous hour's temperature is filled in for each weather station. 
+The function `fill()` is re-exported from tidyr and used to replace explicit missing values with the previous or next observation. For example, the previous hour's temperature can be filled in for each weather station. 
 
 ```{r fill}
 weather_tsbl <- weather_tsbl %>%
@@ -78,11 +76,14 @@ weather_tsbl <- weather_tsbl %>%
 weather_tsbl
 ```
 
+<!-- `na.interp` would use linear interpolation. Is there a fill equivalent? This would give better results in this example. -->
+
+
 ## Aggregation over calendar periods
 
-A common time series analysis task is to aggregate the values to higher-level time periods, for example from hourly data to daily or monthly. For example, it may be interesting to examine average temperature and total precipitation every month. 
+A common time series analysis task is to aggregate the values to higher-level time periods. For example, it may be interesting to examine average temperature and total precipitation every month. 
 
-The tibbletime approach for computing monthly average temperature and total precipitation is shown in the code below. This can be done using the `collapse_by()` followed by grouping the collapsed index and summarising.
+The tibbletime approach for computing monthly average temperature and total precipitation is shown in the code below. This can be done using `collapse_by()` followed by grouping the collapsed index and summarising.
 
 ```{r aggregate-time, error = TRUE}
 # tibbletime
@@ -97,7 +98,7 @@ weather_time %>%
   )
 ```
 
-The tsibble approach introduces a time series specific summarise function, `tsummarise()` pronounced as "tee-summarise". The prefix "t" indicates the first argument, which defines how the time index is collapsed to higher-level periods and can also be named. The remaining "summarise" components work like `summarise()`. This function takes advantages of several lubridate functions, such as `year()` for yearly aggregation, `as_date()` for daily, and `ceiling_date()` for other options. How about quarterly? Check out `yearquarter()`. Zoo's `as.yearmth()` and `as.yearqtr()` also work here!
+The tsibble approach introduces a time series specific summarise function--`tsummarise()`. The prefix "t" indicates the first name-value pair, which defines how the time index is collapsed to higher-level periods and can also be named. The remaining "summarise" components work like `summarise()`. This function takes advantages of several [lubridate](http://lubridate.tidyverse.org/) functions, such as `year()` for yearly aggregation, `as_date()` for daily, and `ceiling_date()` for other options. How about quarterly? Check out `yearquarter()`. Zoo's `as.yearmth()` and `as.yearqtr()` also work here!
 
 ```{r aggregate-tsibble}
 # tsibble
@@ -110,11 +111,11 @@ weather_tsbl %>%
   )
 ```
 
-The variants of the `tsummarise()`, like `tsummarise_all()`, `tsummarise_at()`, `tsummarise_if()`, will be implemented in the near future release.
+Some variants of `tsummarise()`, such as `tsummarise_all()`, `tsummarise_at()`, and `tsummarise_if()`, will be implemented in a near future release.
 
 ## Rolling window calculations
 
-Both packages adapt purrr-syntax to windowed functions for general purpose but in a slightly different way. The tibbletime's `rollify()` creates a rolling function, whereas the counterpart in tsibble--`slide()`--returns results. You may find the other two variations useful in the tsibble: `tile()` for tiling window without overlapping observations, and `stretch()` for fixing an initial window and expanding more observations.
+Both packages adapt purrr-syntax to provide general-purpose windowed functions, but in a slightly different way. The `rollify()` function from tibbletime creates a rolling function, whereas the counterpart in tsibble--`slide()`--returns results. You may find two other variations useful in  tsibble: `tile()` for tiling windows without overlapping observations, and `stretch()` for fixing an initial window and expanding to include more observations.
 
 ```{r moving-average}
 # tibbletime
@@ -130,7 +131,7 @@ weather_tsbl %>%
 
 ## Filtering time
 
-Tibbletime comes with a shorthand to filter time. Does the tsibble have the similar shortcut? No, and will not because `filter()` gives more self-explanatory code.
+Tibbletime comes with a shorthand to filter time. Does the tsibble have the similar shortcut? No, and will not, because `filter()` gives more self-explanatory code.
 
 ```{r filter}
 # tibbletime
@@ -146,6 +147,6 @@ weather_tsbl %>%
 
 ## Wrap-up
 
-Generally, tsibble defines time series tibble more strictly than tibbletime. The former includes not only time index but structural "key" variables. Moreover, the function APIs between two packages are quite different. I would suggest to give both packages a try and choose the one that best suits your need.
+Generally, tsibble defines a time series tibble more strictly than tibbletime. The former includes not only a time index but structural "key" variables. The value of these will become more apparent when we develop forecasting and reconciliation methods designed to work with tsibble. Moreover, the function APIs between the two packages are quite different. I would suggest to give both packages a try and choose the one that best suits your need.
 
-The purpose of this blog post is to tease apart the similarities and differences between the two packages. Both will continue to develop independently, at least for a while --- its not a competition because each developer has different purposes right now. For me, this is part of my thesis research, and I'm trying to understand the key components that we need, to make it easier to go back and forth with modeling and exploration of different types of temporal data. I've recently been exposed to the tidyverse and exploratory data analysis. I am still in burrowing down the rabbit hole of this intellectual exercise, and know there is more to think about yet. Eventually the best of both may converge into one form.
+The purpose of this blog post is to tease apart the similarities and differences between the two packages. Both will continue to develop independently, at least for a while --- it's not a competition because each developer has different purposes right now. For me, this is part of my thesis research, and I'm trying to understand the key components that we need, to make it easier to go back and forth with modeling and exploration of different types of temporal data. I've recently been exposed to the tidyverse and exploratory data analysis. I am still burrowing down the rabbit hole of this intellectual exercise, and know there is more to think about yet. Eventually the best of both may converge into one form.
