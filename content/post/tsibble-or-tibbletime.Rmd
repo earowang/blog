@@ -57,7 +57,7 @@ weather_tsbl
 
 ## Implicit missing values
 
-Temporal data often has missing timestamps. Tsibble provides a helper function `fill_na()` to make these missing timestamps explicit, but tibbletime doesn't currently have similar capabilities. 
+Temporal data often has missing timestamps. Tsibble provides a function `fill_na()` to make these missing timestamps explicit, but tibbletime doesn't currently have similar capabilities. 
 
 For data with regular time intervals, implicit missings can be made explicit using `fill_na()`. Alternatively, missings can be imputed using a prescribed value. For example, precipitation is likely to be 0, and this is imputed using a name-value pair `precip = 0`. Simultaneously, a corresponding `NA` fills the temperature slot. Another subtle change is the increase in the number of rows from filling in the time gaps.
 

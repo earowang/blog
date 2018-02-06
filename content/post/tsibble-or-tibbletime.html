@@ -66,7 +66,7 @@ weather_tsbl &lt;- as_tsibble(weather, index = time_hour)</code></pre>
 </div>
 <div id="implicit-missing-values" class="section level2">
 <h2>Implicit missing values</h2>
-<p>Temporal data often has missing timestamps. Tsibble provides a helper function <code>fill_na()</code> to make these missing timestamps explicit, but tibbletime doesn’t currently have similar capabilities.</p>
+<p>Temporal data often has missing timestamps. Tsibble provides a function <code>fill_na()</code> to make these missing timestamps explicit, but tibbletime doesn’t currently have similar capabilities.</p>
 <p>For data with regular time intervals, implicit missings can be made explicit using <code>fill_na()</code>. Alternatively, missings can be imputed using a prescribed value. For example, precipitation is likely to be 0, and this is imputed using a name-value pair <code>precip = 0</code>. Simultaneously, a corresponding <code>NA</code> fills the temperature slot. Another subtle change is the increase in the number of rows from filling in the time gaps.</p>
 <pre class="r"><code>weather_tsbl &lt;- weather_tsbl %&gt;%
   fill_na(precip = 0)
