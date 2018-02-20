@@ -1,13 +1,13 @@
 ---
 title: "tsibble? or tibbletime?"
 description: "What's the difference between these two tidy time series packages?"
-date: "2018-02-06"
+date: "2018-02-20"
 tags: ["r", "package", "time series"]
 ---
 
 
 
-<p>First of all, <strong>tsibble</strong> is pronounced <em>/ˈt͡sɪbəl/</em>, where “ts” is like in “cats”. Second, a tsibble (or <code>tbl_ts</code>) is a modern reimagining of time series data. The goal of tsibble is to easily wrangle, visualise, forecast time series in R, where time series are defined as data indexed in time order.</p>
+<p>First of all, <a href="http://pkg.earo.me/tsibble/"><strong>tsibble</strong></a> is pronounced <em>/ˈt͡sɪbəl/</em>, where “ts” is like in “cats”. Second, a tsibble (or <code>tbl_ts</code>) is a modern reimagining of time series data. The goal of tsibble is to easily wrangle, visualise, forecast time series in R, where time series are defined as data indexed in time order.</p>
 <p>The development of tsibble has been happening for about half a year, motivated by needing to better bridge data with the time series modeling packages <a href="http://pkg.robjhyndman.com/forecast">forecast</a> and <a href="http://pkg.earo.me/hts/">hts</a> (which I developed as an undergraduate student working with <a href="https://robjhyndman.com">Rob J Hyndman</a>). I was pleasantly surprised when the package <a href="https://github.com/business-science/tibbletime">tibbletime</a> (or <code>tbl_time</code>) was announced on twitter.</p>
 <p>So what do these two packages have in common?</p>
 <ol style="list-style-type: decimal">
@@ -105,7 +105,6 @@ weather_tsbl</code></pre>
 <p>The tibbletime approach for computing monthly average temperature and total precipitation is shown in the code below. This can be done using <code>collapse_by()</code> followed by grouping the collapsed index and summarising.</p>
 <pre class="r"><code># tibbletime
 weather_time %&gt;% 
-  mutate(time_hour = with_tz(time_hour, tzone = &quot;UTC&quot;)) %&gt;% 
   group_by(origin) %&gt;% 
   collapse_by(period = &quot;monthly&quot;) %&gt;% 
   group_by(time_hour, add = TRUE) %&gt;% 

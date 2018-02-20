@@ -8,10 +8,10 @@ tags: ["r", "package", "time series"]
 ```{r setup, echo = FALSE}
 knitr::opts_chunk$set(comment = "#>")
 options(tibble.print_min = 5)
-Sys.setenv(TZ = "")
+Sys.setenv(TZ = "UTC")
 ```
 
-First of all, **tsibble** is pronounced */ˈt͡sɪbəl/*, where "ts" is like in "cats". Second, a tsibble (or `tbl_ts`) is a modern reimagining of time series data. The goal of tsibble is to easily wrangle, visualise, forecast time series in R, where time series are defined as data indexed in time order.
+First of all, [**tsibble**](http://pkg.earo.me/tsibble/) is pronounced */ˈt͡sɪbəl/*, where "ts" is like in "cats". Second, a tsibble (or `tbl_ts`) is a modern reimagining of time series data. The goal of tsibble is to easily wrangle, visualise, forecast time series in R, where time series are defined as data indexed in time order.
 
 The development of tsibble has been happening for about half a year, motivated by needing to better bridge data with the time series modeling packages [forecast](http://pkg.robjhyndman.com/forecast) and [hts](http://pkg.earo.me/hts/) (which I developed as an undergraduate student working with [Rob J Hyndman](https://robjhyndman.com)). I was pleasantly surprised when the package [tibbletime](https://github.com/business-science/tibbletime) (or `tbl_time`) was announced on twitter.
 
@@ -88,7 +88,6 @@ The tibbletime approach for computing monthly average temperature and total prec
 ```{r aggregate-time, error = TRUE}
 # tibbletime
 weather_time %>% 
-  mutate(time_hour = with_tz(time_hour, tzone = "UTC")) %>% 
   group_by(origin) %>% 
   collapse_by(period = "monthly") %>% 
   group_by(time_hour, add = TRUE) %>% 
