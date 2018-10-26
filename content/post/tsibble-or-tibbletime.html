@@ -14,7 +14,7 @@ tags: ["r", "package", "time series"]
 <li>The primary data class in each package is built on top of the tibble (or <code>tbl_df</code>) class, providing an immediate advantage of handling heterogeneous data types and supporting dplyr verbs.</li>
 <li>The time indices are explicitly declared as a data column instead of implicitly inferred as attributes in the <code>ts</code>, <code>xts</code> and <code>zoo</code> objects.</li>
 </ol>
-<p>Beyond this, the packages deviate. I’ll walk through those differences using the <code>weather</code> dataset from the <code>nycflights13</code> package. The latest CRAN versions (tsibble v0.1.2 and tibbletime v0.1.1) are used.</p>
+<p>Beyond this, the packages deviate. I’ll walk through those differences using the <code>weather</code> dataset from the <code>nycflights13</code> package.</p>
 <div id="coercion" class="section level2">
 <h2>Coercion</h2>
 <pre class="r"><code>library(lubridate)
@@ -23,46 +23,47 @@ library(tibbletime)
 weather &lt;- nycflights13::weather %&gt;% 
   select(origin, time_hour, temp, precip)
 weather</code></pre>
-<pre><code>#&gt; # A tibble: 26,130 x 4
+<pre><code>#&gt; # A tibble: 26,115 x 4
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
-#&gt; 1 EWR    2013-01-01 00:00:00  37.0      0
-#&gt; 2 EWR    2013-01-01 01:00:00  37.0      0
-#&gt; 3 EWR    2013-01-01 02:00:00  37.9      0
-#&gt; 4 EWR    2013-01-01 03:00:00  37.9      0
-#&gt; 5 EWR    2013-01-01 04:00:00  37.9      0
-#&gt; # ... with 2.612e+04 more rows</code></pre>
+#&gt; 1 EWR    2013-01-01 01:00:00  39.0      0
+#&gt; 2 EWR    2013-01-01 02:00:00  39.0      0
+#&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
+#&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
+#&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
+#&gt; # ... with 2.611e+04 more rows</code></pre>
 <p>To demonstrate the difference in coercion, we use a subset of <code>weather</code>, that includes weather stations (<code>origin</code>), hourly timestamps (<code>time_hour</code>), temperature and precipitation. It is a tibble (<code>tbl_df</code>). To coerce to a <code>tbl_time</code>, it is sufficient to specify the <code>index</code> in <code>as_tbl_time()</code>.</p>
 <pre class="r"><code># tibbletime
 weather_time &lt;- as_tbl_time(weather, index = time_hour)</code></pre>
 <p>In contrast, <code>tbl_ts</code> from tsibble is a stricter object than <code>tbl_time</code>, because <strong>each observation must be uniquely identified by the index and key.</strong> The “key” provides a way to impose structures, which allows separation of multiple time series in one dataset. In this data example, the identifying variable <code>origin</code> is passed to the <code>key</code> argument via <code>id()</code>. Tsibble requires tidied data without duplicates in the time indices for each key.</p>
 <pre class="r"><code># tsibble
 weather_tsbl &lt;- as_tsibble(weather, index = time_hour)</code></pre>
-<pre><code>#&gt; Error: Invalid tsibble: identical data entries from `time_hour`. Use `inform_duplicates()` to check the duplicated rows.</code></pre>
+<pre><code>#&gt; Error: A valid tsibble must have distinct rows identified by key and index.
+#&gt; Please use `find_duplicates()` to check the duplicated rows.</code></pre>
 <pre class="r"><code>weather_tsbl &lt;- as_tsibble(weather, key = id(origin), index = time_hour)</code></pre>
 <p>The <code>tbl_time</code> and <code>tbl_ts</code> objects for the <code>weather</code> data are saved as <code>weather_time</code> and <code>weather_tsbl</code> respectively. The headers in the print results reveal another difference. Under the hood, tsibble automatically computes the time interval of data from the index. It figures out that it’s hourly data (see <code>[1HOUR]</code> in the summary). This will greatly enhance the functionality for time series models and visualisation, since time series frequency is critical in determining what model to estimate, or what plot to create. In addition, tsibble displays the keys and the number of unique keys, instead of the “index” in tibbletime.</p>
 <pre class="r"><code>weather_time</code></pre>
-<pre><code>#&gt; # A time tibble: 26,130 x 4
+<pre><code>#&gt; # A time tibble: 26,115 x 4
 #&gt; # Index: time_hour
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
-#&gt; 1 EWR    2013-01-01 00:00:00  37.0      0
-#&gt; 2 EWR    2013-01-01 01:00:00  37.0      0
-#&gt; 3 EWR    2013-01-01 02:00:00  37.9      0
-#&gt; 4 EWR    2013-01-01 03:00:00  37.9      0
-#&gt; 5 EWR    2013-01-01 04:00:00  37.9      0
-#&gt; # ... with 2.612e+04 more rows</code></pre>
+#&gt; 1 EWR    2013-01-01 01:00:00  39.0      0
+#&gt; 2 EWR    2013-01-01 02:00:00  39.0      0
+#&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
+#&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
+#&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
+#&gt; # ... with 2.611e+04 more rows</code></pre>
 <pre class="r"><code>weather_tsbl</code></pre>
-<pre><code>#&gt; # A tsibble: 26,130 x 4 [1HOUR]
-#&gt; # Keys:      origin [3]
+<pre><code>#&gt; # A tsibble: 26,115 x 4 [1h]
+#&gt; # Key:       origin [3]
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
-#&gt; 1 EWR    2013-01-01 00:00:00  37.0      0
-#&gt; 2 EWR    2013-01-01 01:00:00  37.0      0
-#&gt; 3 EWR    2013-01-01 02:00:00  37.9      0
-#&gt; 4 EWR    2013-01-01 03:00:00  37.9      0
-#&gt; 5 EWR    2013-01-01 04:00:00  37.9      0
-#&gt; # ... with 2.612e+04 more rows</code></pre>
+#&gt; 1 EWR    2013-01-01 01:00:00  39.0      0
+#&gt; 2 EWR    2013-01-01 02:00:00  39.0      0
+#&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
+#&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
+#&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
+#&gt; # ... with 2.611e+04 more rows</code></pre>
 </div>
 <div id="implicit-missing-values" class="section level2">
 <h2>Implicit missing values</h2>
@@ -71,32 +72,32 @@ weather_tsbl &lt;- as_tsibble(weather, index = time_hour)</code></pre>
 <pre class="r"><code>weather_tsbl &lt;- weather_tsbl %&gt;%
   fill_na(precip = 0)
 weather_tsbl</code></pre>
-<pre><code>#&gt; # A tsibble: 26,208 x 4 [1HOUR]
-#&gt; # Keys:      origin [3]
+<pre><code>#&gt; # A tsibble: 26,190 x 4 [1h]
+#&gt; # Key:       origin [3]
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
-#&gt; 1 EWR    2013-01-01 00:00:00  37.0      0
-#&gt; 2 JFK    2013-01-01 00:00:00  37.9      0
-#&gt; 3 LGA    2013-01-01 00:00:00  39.0      0
-#&gt; 4 EWR    2013-01-01 01:00:00  37.0      0
-#&gt; 5 JFK    2013-01-01 01:00:00  37.9      0
-#&gt; # ... with 2.62e+04 more rows</code></pre>
-<p>The function <code>fill()</code> is re-exported from tidyr and used to replace explicit missing values with the previous or next observation. For example, the previous hour’s temperature can be filled in for each weather station.</p>
+#&gt; 1 EWR    2013-01-01 01:00:00  39.0      0
+#&gt; 2 EWR    2013-01-01 02:00:00  39.0      0
+#&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
+#&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
+#&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
+#&gt; # ... with 2.618e+04 more rows</code></pre>
+<p>The function <code>fill()</code> from tidyr is used to replace explicit missing values with the previous or next observation. For example, the previous hour’s temperature can be filled in for each weather station.</p>
 <pre class="r"><code>weather_tsbl &lt;- weather_tsbl %&gt;%
   group_by(origin) %&gt;% 
-  fill(temp, .direction = &quot;down&quot;)
+  tidyr::fill(temp, .direction = &quot;down&quot;)
 weather_tsbl</code></pre>
-<pre><code>#&gt; # A tsibble: 26,208 x 4 [1HOUR]
-#&gt; # Keys:      origin [3]
+<pre><code>#&gt; # A tsibble: 26,190 x 4 [1h]
+#&gt; # Key:       origin [3]
 #&gt; # Groups:    origin [3]
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
-#&gt; 1 EWR    2013-01-01 00:00:00  37.0      0
-#&gt; 2 EWR    2013-01-01 01:00:00  37.0      0
-#&gt; 3 EWR    2013-01-01 02:00:00  37.9      0
-#&gt; 4 EWR    2013-01-01 03:00:00  37.9      0
-#&gt; 5 EWR    2013-01-01 04:00:00  37.9      0
-#&gt; # ... with 2.62e+04 more rows</code></pre>
+#&gt; 1 EWR    2013-01-01 01:00:00  39.0      0
+#&gt; 2 EWR    2013-01-01 02:00:00  39.0      0
+#&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
+#&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
+#&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
+#&gt; # ... with 2.618e+04 more rows</code></pre>
 <!-- `na.interp` would use linear interpolation. Is there a fill equivalent? This would give better results in this example. -->
 </div>
 <div id="aggregation-over-calendar-periods" class="section level2">
@@ -117,32 +118,31 @@ weather_time %&gt;%
 #&gt; # Groups: origin [?]
 #&gt;   origin time_hour           avg_temp ttl_precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;                 &lt;dbl&gt;      &lt;dbl&gt;
-#&gt; 1 EWR    2013-01-31 23:00:00     35.6       2.70
-#&gt; 2 EWR    2013-02-28 23:00:00     34.2       2.76
-#&gt; 3 EWR    2013-03-31 23:00:00     40.0       1.94
-#&gt; 4 EWR    2013-04-30 23:00:00     52.9       1.05
-#&gt; 5 EWR    2013-05-31 23:00:00     63.1       2.76
+#&gt; 1 EWR    2013-01-31 23:00:00     35.6       3.53
+#&gt; 2 EWR    2013-02-28 23:00:00     34.3       3.83
+#&gt; 3 EWR    2013-03-31 23:00:00     40.1       3   
+#&gt; 4 EWR    2013-04-30 23:00:00     53.0       1.47
+#&gt; 5 EWR    2013-05-31 23:00:00     63.3       5.44
 #&gt; # ... with 31 more rows</code></pre>
-<p>The tsibble approach introduces a time series specific summarise function–<code>tsummarise()</code>. The prefix “t” indicates the first name-value pair, which defines how the time index is collapsed to higher-level periods and can also be named. The remaining “summarise” components work like <code>summarise()</code>. This function takes advantages of several <a href="http://lubridate.tidyverse.org/">lubridate</a> functions, such as <code>year()</code> for yearly aggregation, <code>as_date()</code> for daily, and <code>ceiling_date()</code> for other options. How about quarterly? Check out <code>yearquarter()</code>. Zoo’s <code>as.yearmth()</code> and <code>as.yearqtr()</code> also work here!</p>
+<p>The tsibble approach introduces a time-based grouping function–<code>index-by()</code>. This function takes a name-value pair, which defines how the time index is collapsed to higher-level periods, followed by operations like <code>summarise()</code>. It accepts a range of index functions, such as <code>year()</code> for yearly aggregation, <code>as_date()</code> for daily, and <code>ceiling_date()</code> for other options. How about quarterly? Check out <code>yearquarter()</code>. Zoo’s <code>as.yearmth()</code> and <code>as.yearqtr()</code> also work here!</p>
 <pre class="r"><code># tsibble
 weather_tsbl %&gt;%
   group_by(origin) %&gt;%
-  tsummarise(
-    year_month = yearmonth(time_hour), # monthly aggregates
+  index_by(year_month = yearmonth(time_hour)) %&gt;% 
+  summarise(
     avg_temp = mean(temp, na.rm = TRUE),
     ttl_precip = sum(precip, na.rm = TRUE)
   )</code></pre>
-<pre><code>#&gt; # A tsibble: 36 x 4 [1MONTH]
-#&gt; # Keys:      origin [3]
+<pre><code>#&gt; # A tsibble: 36 x 4 [1M]
+#&gt; # Key:       origin [3]
 #&gt;   origin year_month avg_temp ttl_precip
 #&gt;   &lt;chr&gt;       &lt;mth&gt;    &lt;dbl&gt;      &lt;dbl&gt;
-#&gt; 1 EWR      2013 Jan     35.6       2.70
-#&gt; 2 EWR      2013 Feb     34.1       2.76
-#&gt; 3 EWR      2013 Mar     40.0       1.94
-#&gt; 4 EWR      2013 Apr     52.9       1.05
-#&gt; 5 EWR      2013 May     63.1       2.76
+#&gt; 1 EWR      2013 Jan     35.6       3.53
+#&gt; 2 EWR      2013 Feb     34.2       3.83
+#&gt; 3 EWR      2013 Mar     40.1       3   
+#&gt; 4 EWR      2013 Apr     53.0       1.47
+#&gt; 5 EWR      2013 May     63.3       5.44
 #&gt; # ... with 31 more rows</code></pre>
-<p>Some variants of <code>tsummarise()</code>, such as <code>tsummarise_all()</code>, <code>tsummarise_at()</code>, and <code>tsummarise_if()</code>, will be implemented in a near future release.</p>
 </div>
 <div id="rolling-window-calculations" class="section level2">
 <h2>Rolling window calculations</h2>
@@ -152,32 +152,32 @@ mean_3 &lt;- rollify(~ mean(.x, na.rm = TRUE), window = 3)
 weather_time %&gt;% 
   group_by(origin) %&gt;% 
   mutate(temp_ma = mean_3(temp))</code></pre>
-<pre><code>#&gt; # A time tibble: 26,130 x 5
+<pre><code>#&gt; # A time tibble: 26,115 x 5
 #&gt; # Index:  time_hour
 #&gt; # Groups: origin [3]
 #&gt;   origin time_hour            temp precip temp_ma
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
-#&gt; 1 EWR    2013-01-01 00:00:00  37.0      0    NA  
-#&gt; 2 EWR    2013-01-01 01:00:00  37.0      0    NA  
-#&gt; 3 EWR    2013-01-01 02:00:00  37.9      0    37.3
-#&gt; 4 EWR    2013-01-01 03:00:00  37.9      0    37.6
-#&gt; 5 EWR    2013-01-01 04:00:00  37.9      0    37.9
-#&gt; # ... with 2.612e+04 more rows</code></pre>
+#&gt; 1 EWR    2013-01-01 01:00:00  39.0      0    NA  
+#&gt; 2 EWR    2013-01-01 02:00:00  39.0      0    NA  
+#&gt; 3 EWR    2013-01-01 03:00:00  39.0      0    39.0
+#&gt; 4 EWR    2013-01-01 04:00:00  39.9      0    39.3
+#&gt; 5 EWR    2013-01-01 05:00:00  39.0      0    39.3
+#&gt; # ... with 2.611e+04 more rows</code></pre>
 <pre class="r"><code># tsibble
 weather_tsbl %&gt;% 
   group_by(origin) %&gt;% 
   mutate(temp_ma = slide(temp, ~ mean(., na.rm = TRUE), size = 3))</code></pre>
-<pre><code>#&gt; # A tsibble: 26,208 x 5 [1HOUR]
-#&gt; # Keys:      origin [3]
+<pre><code>#&gt; # A tsibble: 26,190 x 5 [1h]
+#&gt; # Key:       origin [3]
 #&gt; # Groups:    origin [3]
-#&gt;   origin time_hour            temp precip temp_ma
-#&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
-#&gt; 1 EWR    2013-01-01 00:00:00  37.0      0    NA  
-#&gt; 2 EWR    2013-01-01 01:00:00  37.0      0    NA  
-#&gt; 3 EWR    2013-01-01 02:00:00  37.9      0    37.3
-#&gt; 4 EWR    2013-01-01 03:00:00  37.9      0    37.6
-#&gt; 5 EWR    2013-01-01 04:00:00  37.9      0    37.9
-#&gt; # ... with 2.62e+04 more rows</code></pre>
+#&gt;   origin time_hour            temp precip temp_ma  
+#&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt; &lt;list&gt;   
+#&gt; 1 EWR    2013-01-01 01:00:00  39.0      0 &lt;dbl [1]&gt;
+#&gt; 2 EWR    2013-01-01 02:00:00  39.0      0 &lt;dbl [1]&gt;
+#&gt; 3 EWR    2013-01-01 03:00:00  39.0      0 &lt;dbl [1]&gt;
+#&gt; 4 EWR    2013-01-01 04:00:00  39.9      0 &lt;dbl [1]&gt;
+#&gt; 5 EWR    2013-01-01 05:00:00  39.0      0 &lt;dbl [1]&gt;
+#&gt; # ... with 2.618e+04 more rows</code></pre>
 </div>
 <div id="filtering-time" class="section level2">
 <h2>Filtering time</h2>
@@ -191,27 +191,27 @@ weather_time %&gt;%
 #&gt; # Groups: origin [3]
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
-#&gt; 1 EWR    2013-06-01 00:00:00  84.9      0
-#&gt; 2 EWR    2013-06-01 01:00:00  82.0      0
-#&gt; 3 EWR    2013-06-01 02:00:00  80.1      0
-#&gt; 4 EWR    2013-06-01 03:00:00  78.1      0
-#&gt; 5 EWR    2013-06-01 04:00:00  77.0      0
+#&gt; 1 EWR    2013-06-01 00:00:00  78.1      0
+#&gt; 2 EWR    2013-06-01 01:00:00  77        0
+#&gt; 3 EWR    2013-06-01 02:00:00  75.9      0
+#&gt; 4 EWR    2013-06-01 03:00:00  73.9      0
+#&gt; 5 EWR    2013-06-01 04:00:00  73.0      0
 #&gt; # ... with 4,383 more rows</code></pre>
 <pre class="r"><code># tsibble
 weather_tsbl %&gt;% 
   filter(
     time_hour &gt;= &quot;2013-06-01 00:00&quot;, time_hour &lt;= &quot;2013-07-31 23:00&quot;
   )</code></pre>
-<pre><code>#&gt; # A tsibble: 4,392 x 4 [1HOUR]
-#&gt; # Keys:      origin [3]
+<pre><code>#&gt; # A tsibble: 4,392 x 4 [1h]
+#&gt; # Key:       origin [3]
 #&gt; # Groups:    origin [3]
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
-#&gt; 1 EWR    2013-06-01 00:00:00  84.9      0
-#&gt; 2 EWR    2013-06-01 01:00:00  82.0      0
-#&gt; 3 EWR    2013-06-01 02:00:00  80.1      0
-#&gt; 4 EWR    2013-06-01 03:00:00  78.1      0
-#&gt; 5 EWR    2013-06-01 04:00:00  77.0      0
+#&gt; 1 EWR    2013-05-31 20:00:00  87.1      0
+#&gt; 2 EWR    2013-05-31 21:00:00  84.9      0
+#&gt; 3 EWR    2013-05-31 22:00:00  82.0      0
+#&gt; 4 EWR    2013-05-31 23:00:00  80.1      0
+#&gt; 5 EWR    2013-06-01 00:00:00  78.1      0
 #&gt; # ... with 4,387 more rows</code></pre>
 </div>
 <div id="wrap-up" class="section level2">

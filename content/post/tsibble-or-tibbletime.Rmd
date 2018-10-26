@@ -20,7 +20,7 @@ So what do these two packages have in common?
 1. The primary data class in each package is built on top of the tibble (or `tbl_df`)  class, providing an immediate advantage of handling heterogeneous data types and supporting dplyr verbs. 
 2. The time indices are explicitly declared as a data column instead of implicitly inferred as attributes in the `ts`, `xts` and `zoo` objects.
 
-Beyond this, the packages deviate. I'll walk through those differences using the `weather` dataset from the `nycflights13` package. The latest CRAN versions (tsibble v0.1.2 and tibbletime v0.1.1) are used.
+Beyond this, the packages deviate. I'll walk through those differences using the `weather` dataset from the `nycflights13` package.
 
 ## Coercion
 
@@ -67,12 +67,12 @@ weather_tsbl <- weather_tsbl %>%
 weather_tsbl
 ```
 
-The function `fill()` is re-exported from tidyr and used to replace explicit missing values with the previous or next observation. For example, the previous hour's temperature can be filled in for each weather station. 
+The function `fill()` from tidyr is used to replace explicit missing values with the previous or next observation. For example, the previous hour's temperature can be filled in for each weather station. 
 
 ```{r fill}
 weather_tsbl <- weather_tsbl %>%
   group_by(origin) %>% 
-  fill(temp, .direction = "down")
+  tidyr::fill(temp, .direction = "down")
 weather_tsbl
 ```
 
@@ -97,20 +97,18 @@ weather_time %>%
   )
 ```
 
-The tsibble approach introduces a time series specific summarise function--`tsummarise()`. The prefix "t" indicates the first name-value pair, which defines how the time index is collapsed to higher-level periods and can also be named. The remaining "summarise" components work like `summarise()`. This function takes advantages of several [lubridate](http://lubridate.tidyverse.org/) functions, such as `year()` for yearly aggregation, `as_date()` for daily, and `ceiling_date()` for other options. How about quarterly? Check out `yearquarter()`. Zoo's `as.yearmth()` and `as.yearqtr()` also work here!
+The tsibble approach introduces a time-based grouping function--`index-by()`. This function takes a name-value pair, which defines how the time index is collapsed to higher-level periods, followed by operations like `summarise()`. It accepts a range of index functions, such as `year()` for yearly aggregation, `as_date()` for daily, and `ceiling_date()` for other options. How about quarterly? Check out `yearquarter()`. Zoo's `as.yearmth()` and `as.yearqtr()` also work here!
 
 ```{r aggregate-tsibble}
 # tsibble
 weather_tsbl %>%
   group_by(origin) %>%
-  tsummarise(
-    year_month = yearmonth(time_hour), # monthly aggregates
+  index_by(year_month = yearmonth(time_hour)) %>% 
+  summarise(
     avg_temp = mean(temp, na.rm = TRUE),
     ttl_precip = sum(precip, na.rm = TRUE)
   )
 ```
-
-Some variants of `tsummarise()`, such as `tsummarise_all()`, `tsummarise_at()`, and `tsummarise_if()`, will be implemented in a near future release.
 
 ## Rolling window calculations
 
