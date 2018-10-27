@@ -123,7 +123,7 @@ weather_time %>%
 # tsibble
 weather_tsbl %>% 
   group_by(origin) %>% 
-  mutate(temp_ma = slide_dbl(temp, ~ mean(., na.rm = TRUE), size = 3))
+  mutate(temp_ma = slide_dbl(temp, ~ mean(., na.rm = TRUE), .size = 3))
 ```
 
 ## Filtering time

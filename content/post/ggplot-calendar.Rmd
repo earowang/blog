@@ -1,0 +1,13 @@
+---
+title: "Create your own calendar with ggplot2"
+description: "A new faceting method `facet_calendar()` is implemented."
+draft: true
+date: "`r Sys.Date()`"
+tags: ["r", "visualisation", "time series", "calendar"]
+---
+
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(comment = "#>")
+options(tibble.print_min = 5)
+```
+

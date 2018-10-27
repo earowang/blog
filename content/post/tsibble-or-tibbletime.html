@@ -166,17 +166,17 @@ weather_time %&gt;%
 <pre class="r"><code># tsibble
 weather_tsbl %&gt;% 
   group_by(origin) %&gt;% 
-  mutate(temp_ma = slide_dbl(temp, ~ mean(., na.rm = TRUE), size = 3))</code></pre>
+  mutate(temp_ma = slide_dbl(temp, ~ mean(., na.rm = TRUE), .size = 3))</code></pre>
 <pre><code>#&gt; # A tsibble: 26,190 x 5 [1h]
 #&gt; # Key:       origin [3]
 #&gt; # Groups:    origin [3]
 #&gt;   origin time_hour            temp precip temp_ma
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;
-#&gt; 1 EWR    2013-01-01 01:00:00  39.0      0    39.0
-#&gt; 2 EWR    2013-01-01 02:00:00  39.0      0    39.0
+#&gt; 1 EWR    2013-01-01 01:00:00  39.0      0    NA  
+#&gt; 2 EWR    2013-01-01 02:00:00  39.0      0    NA  
 #&gt; 3 EWR    2013-01-01 03:00:00  39.0      0    39.0
-#&gt; 4 EWR    2013-01-01 04:00:00  39.9      0    39.9
-#&gt; 5 EWR    2013-01-01 05:00:00  39.0      0    39.0
+#&gt; 4 EWR    2013-01-01 04:00:00  39.9      0    39.3
+#&gt; 5 EWR    2013-01-01 05:00:00  39.0      0    39.3
 #&gt; # ... with 2.618e+04 more rows</code></pre>
 </div>
 <div id="filtering-time" class="section level2">
