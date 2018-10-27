@@ -1,6 +1,6 @@
 ---
 title: "Create your own calendar with ggplot2"
-description: "A new faceting method `facet_calendar()` is implemented."
+description: "A new faceting method `facet_calendar()` is introduced."
 draft: true
 date: "2018-10-27"
 tags: ["r", "visualisation", "time series", "calendar"]
@@ -8,4 +8,38 @@ tags: ["r", "visualisation", "time series", "calendar"]
 
 
 
-
+<p>I’ve put my calendar plot paper on <a href="https://arxiv.org/abs/1810.09624">arXiv</a>, which was picked as <a href="https://twitter.com/assertpub_/status/1055027418312990720">the top 1 paper in Application</a> on the day. This paper introduced a new calendar-based graphics for visualising people’s daily activities using a data re-structuring approach, implemented as <a href="https://pkg.earo.me/sugrrants/reference/frame-calendar.html"><code>sugrrants::frame_calendar()</code></a>. The calendar layout is a clear analogue to facetting, but I didn’t have much success in developing a facetting method for it almost two years ago. I realised why not ask Thomas about the possibilities of <code>facet_calendar()</code> when he congratulated on Twitter. He pointed out <a href="https://twitter.com/thomasp85/status/1055066290392649729">subclassing of <code>FacetWrap</code></a> and <a href="https://twitter.com/thomasp85/status/1055351430557646848"><code>ggroto_parent()</code></a> to modify the components as desired. It took me one day to get <code>facet_calendar()</code> done and most time spent on figuring out the <a href="https://cran.r-project.org/package=gtable"><em>gtable</em></a>. <a href="https://github.com/earowang/sugrrants/blob/master/R/facet-calendar.R">The code</a> is indeed simple. Now a fully-fledged facetting calendar with formal labels and axes is available in the <a href="https://pkg.earo.me/sugrrants/"><em>sugrrants</em></a> package.</p>
+<p>Calendar-based visualisations go beyond calendar heatmap and can unfold many interesting scenes. A few useful examples can be found <a href="https://twitter.com/colindcarroll/status/946477247036354562">here</a>, <a href="https://twitter.com/tomelliottnz/status/958887861943640064">here</a>, and <a href="https://sarahromanes.github.io/post/calendar-plots/">here</a>. All data is about the past, but we shall be able to create a 2019 🎃-themed calendar with <em>ggplot2</em>.</p>
+<pre class="r"><code>library(tidyverse)
+library(lubridate)
+library(sugrrants)
+cal19 &lt;- tibble(
+  date = seq(as.Date(&quot;2019-01-01&quot;), as.Date(&quot;2019-12-31&quot;), by = 1),
+  x = 0L,
+  y = 0L,
+  dom = mday(date),
+  weekend = as.factor(if_else(wday(date, week_start = 1) %in% c(6, 7), 1, 0))
+)</code></pre>
+<pre class="r"><code>cal19 %&gt;%
+  ggplot(aes(x, y)) +
+  geom_text(aes(label = dom, colour = weekend), size = 3) +
+  facet_calendar(date = date, format = &quot;%b&quot;, week_start = 7, ncol = 3) +
+  labs(
+    x = &quot;&quot;, y = &quot;&quot;, 
+    title = &quot;2019 Grammar of Calendar-based Graphics ;)&quot;, 
+    caption = &quot;made with R &amp; &lt;3&quot;
+  ) +
+  theme(
+    strip.background = element_rect(fill = &quot;#881EE4&quot;),
+    panel.background = element_rect(fill = &quot;#000000&quot;),
+    strip.text = element_text(colour = &quot;#FFFFFF&quot;),
+    axis.ticks = element_blank(),
+    axis.text = element_blank(),
+    panel.grid = element_blank()
+  ) +
+  scale_colour_manual(values = c(`1` = &quot;#FF9A00&quot;, `0` = &quot;#85E21F&quot;)) +
+  guides(colour = &quot;none&quot;)</code></pre>
+<p><img src="/post/ggplot-calendar_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<!--
+We manage our daily schedules using calendar apps or notebooks. It is easy to digest new calendar-based visualisations since the calendar layout is rather familiar to us. The widely used one is calendar heatmap, which Github uses to display daily tallies of user's commits, for example. But it's just a point summary. If more details at sub-daily resolutions are unpacked, these will certainly form a richer and vivider picture.
+-->
