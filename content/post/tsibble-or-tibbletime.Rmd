@@ -48,7 +48,7 @@ weather_tsbl <- as_tsibble(weather, index = time_hour)
 weather_tsbl <- as_tsibble(weather, key = id(origin), index = time_hour)
 ```
 
-The `tbl_time` and `tbl_ts` objects for the `weather` data are saved as `weather_time` and `weather_tsbl` respectively. The headers in the print results reveal another difference. Under the hood, tsibble automatically computes the time interval of data from the index. It figures out that it's hourly data (see `[1HOUR]` in the summary). This will greatly enhance the functionality for time series models and visualisation, since time series frequency is critical in determining what model to estimate, or what plot to create. In addition, tsibble displays the keys and the number of unique keys, instead of the "index" in tibbletime.
+The `tbl_time` and `tbl_ts` objects for the `weather` data are saved as `weather_time` and `weather_tsbl` respectively. The headers in the print results reveal another difference. Under the hood, tsibble automatically computes the time interval of data from the index. It figures out that it's hourly data (see `[1h]` in the summary). This will greatly enhance the functionality for time series models and visualisation, since time series frequency is critical in determining what model to estimate, or what plot to create. In addition, tsibble displays the keys and the number of unique keys, instead of the "index" in tibbletime.
 
 ```{r print}
 weather_time
@@ -138,12 +138,13 @@ weather_time %>%
 # tsibble
 weather_tsbl %>% 
   filter(
-    time_hour >= "2013-06-01 00:00", time_hour <= "2013-07-31 23:00"
+    time_hour >= ymd_h("2013-06-01 00", tz = "America/New_York"), 
+    time_hour <= ymd_h("2013-07-31 23", tz = "America/New_York")
   )
 ```
 
 ## Wrap-up
 
-Generally, tsibble defines a time series tibble more strictly than tibbletime. The former includes not only a time index but structural "key" variables. The value of these will become more apparent when we develop forecasting and reconciliation methods designed to work with tsibble. Moreover, the function APIs between the two packages are quite different. I would suggest to give both packages a try and choose the one that best suits your need.
+Generally, tsibble defines a time series tibble more strictly than tibbletime. The former includes not only a time index but "key" variables. The value of these will become more apparent when we develop visualisation and forecasting methods designed to work with tsibble. Moreover, the function APIs between the two packages are quite different. I would suggest to give both packages a try and choose the one that best suits your need.
 
 The purpose of this blog post is to tease apart the similarities and differences between the two packages. Both will continue to develop independently, at least for a while --- it's not a competition because each developer has different purposes right now. For me, this is part of my thesis research, and I'm trying to understand the key components that we need, to make it easier to go back and forth with modeling and exploration of different types of temporal data. I've recently been exposed to the tidyverse and exploratory data analysis. I am still burrowing down the rabbit hole of this intellectual exercise, and know there is more to think about yet. Eventually the best of both may converge into one form.

@@ -41,7 +41,7 @@ weather_tsbl &lt;- as_tsibble(weather, index = time_hour)</code></pre>
 <pre><code>#&gt; Error: A valid tsibble must have distinct rows identified by key and index.
 #&gt; Please use `find_duplicates()` to check the duplicated rows.</code></pre>
 <pre class="r"><code>weather_tsbl &lt;- as_tsibble(weather, key = id(origin), index = time_hour)</code></pre>
-<p>The <code>tbl_time</code> and <code>tbl_ts</code> objects for the <code>weather</code> data are saved as <code>weather_time</code> and <code>weather_tsbl</code> respectively. The headers in the print results reveal another difference. Under the hood, tsibble automatically computes the time interval of data from the index. It figures out that it’s hourly data (see <code>[1HOUR]</code> in the summary). This will greatly enhance the functionality for time series models and visualisation, since time series frequency is critical in determining what model to estimate, or what plot to create. In addition, tsibble displays the keys and the number of unique keys, instead of the “index” in tibbletime.</p>
+<p>The <code>tbl_time</code> and <code>tbl_ts</code> objects for the <code>weather</code> data are saved as <code>weather_time</code> and <code>weather_tsbl</code> respectively. The headers in the print results reveal another difference. Under the hood, tsibble automatically computes the time interval of data from the index. It figures out that it’s hourly data (see <code>[1h]</code> in the summary). This will greatly enhance the functionality for time series models and visualisation, since time series frequency is critical in determining what model to estimate, or what plot to create. In addition, tsibble displays the keys and the number of unique keys, instead of the “index” in tibbletime.</p>
 <pre class="r"><code>weather_time</code></pre>
 <pre><code>#&gt; # A time tibble: 26,115 x 4
 #&gt; # Index: time_hour
@@ -200,22 +200,23 @@ weather_time %&gt;%
 <pre class="r"><code># tsibble
 weather_tsbl %&gt;% 
   filter(
-    time_hour &gt;= &quot;2013-06-01 00:00&quot;, time_hour &lt;= &quot;2013-07-31 23:00&quot;
+    time_hour &gt;= ymd_h(&quot;2013-06-01 00&quot;, tz = &quot;America/New_York&quot;), 
+    time_hour &lt;= ymd_h(&quot;2013-07-31 23&quot;, tz = &quot;America/New_York&quot;)
   )</code></pre>
 <pre><code>#&gt; # A tsibble: 4,392 x 4 [1h]
 #&gt; # Key:       origin [3]
 #&gt; # Groups:    origin [3]
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
-#&gt; 1 EWR    2013-05-31 20:00:00  87.1      0
-#&gt; 2 EWR    2013-05-31 21:00:00  84.9      0
-#&gt; 3 EWR    2013-05-31 22:00:00  82.0      0
-#&gt; 4 EWR    2013-05-31 23:00:00  80.1      0
-#&gt; 5 EWR    2013-06-01 00:00:00  78.1      0
+#&gt; 1 EWR    2013-06-01 00:00:00  78.1      0
+#&gt; 2 EWR    2013-06-01 01:00:00  77        0
+#&gt; 3 EWR    2013-06-01 02:00:00  75.9      0
+#&gt; 4 EWR    2013-06-01 03:00:00  73.9      0
+#&gt; 5 EWR    2013-06-01 04:00:00  73.0      0
 #&gt; # ... with 4,387 more rows</code></pre>
 </div>
 <div id="wrap-up" class="section level2">
 <h2>Wrap-up</h2>
-<p>Generally, tsibble defines a time series tibble more strictly than tibbletime. The former includes not only a time index but structural “key” variables. The value of these will become more apparent when we develop forecasting and reconciliation methods designed to work with tsibble. Moreover, the function APIs between the two packages are quite different. I would suggest to give both packages a try and choose the one that best suits your need.</p>
+<p>Generally, tsibble defines a time series tibble more strictly than tibbletime. The former includes not only a time index but “key” variables. The value of these will become more apparent when we develop visualisation and forecasting methods designed to work with tsibble. Moreover, the function APIs between the two packages are quite different. I would suggest to give both packages a try and choose the one that best suits your need.</p>
 <p>The purpose of this blog post is to tease apart the similarities and differences between the two packages. Both will continue to develop independently, at least for a while — it’s not a competition because each developer has different purposes right now. For me, this is part of my thesis research, and I’m trying to understand the key components that we need, to make it easier to go back and forth with modeling and exploration of different types of temporal data. I’ve recently been exposed to the tidyverse and exploratory data analysis. I am still burrowing down the rabbit hole of this intellectual exercise, and know there is more to think about yet. Eventually the best of both may converge into one form.</p>
 </div>
