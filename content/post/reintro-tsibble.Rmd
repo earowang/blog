@@ -1,0 +1,113 @@
+---
+title: "Reintroduce tsibble: melt the clock"
+description: "A comprehensive guide to tsibble, with a case study about NYC Citi Bike"
+date: "`r Sys.Date()`"
+draft: true
+tags: ["r", "tidy data", "time series"]
+---
+
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(comment = "#>")
+options(tibble.print_min = 3)
+```
+
+<img src="https://github.com/tidyverts/tsibble/blob/master/man/figures/logo.png?raw=true" align="right" />
+
+The **tsibble** package has started development since July 2017, and its `v0.6.2` has recently landed on CRAN. As I become relatively confident about tsibble's data structure and software design, I have removed the lifecycle badge declaring the maturing stage since `v0.6.0`. I'd like to reintroduce tsibble to you and highlight the role tsibble plays in tidy time series analysis.
+
+---
+
+```{r fun-nycbikes, echo = FALSE}
+read_nycbikes <- function(year) {
+  today <- Sys.Date()
+  mth <- 12
+  if (year == format(today, "%Y")) {
+    mth <- as.integer(format(today, "%m")) - 1
+  }
+  mths <- formatC(seq_len(mth), width = 2, flag = "0")
+  yrmths <- paste0(year, mths)
+  temp_dir <- tempdir()
+  url <- glue::glue("https://s3.amazonaws.com/tripdata/JC-{yrmths}-citibike-tripdata.csv.zip")
+  file <- basename(url)
+  dest_file <- fs::path(temp_dir, file)
+  purrr::map2(url, dest_file, ~ download.file(.x, .y, quiet = TRUE))
+  purrr::map_dfr(dest_file,
+    ~ readr::read_csv(., locale = readr::locale(tz = "America/New_York"))
+  )
+}
+```
+
+## Motivation
+
+## tsibble = key + index
+
+```{r nycbikes18, message = FALSE}
+(nycbikes18 <- read_nycbikes(year = 2018))
+```
+
+```{r create-tsibble, message = FALSE}
+library(tsibble)
+library(tidyverse)
+library(lubridate)
+nycbikes_ts <- nycbikes18 %>% 
+  as_tsibble(key = id(bikeid), index = starttime, regular = FALSE) %>% 
+  print()
+```
+
+## Tweaks about tidyverse verbs
+
+```{r select1, error = TRUE}
+nycbikes_ts %>% 
+  select(-starttime)
+```
+
+```{r select2}
+nycbikes_ts %>% 
+  select(bikeid, tripduration)
+```
+
+```{r mutate, error = TRUE}
+nycbikes_ts %>% 
+  mutate(bikeid = 2018L)
+```
+
+```{r summarise}
+nycbikes_ts %>% 
+  summarise(ntrip = n())
+```
+
+## New time-based verbs
+
+```{r filter-index}
+nycbikes_ts %>% 
+  filter_index(~ "2018-02", "2018-07" ~ "2018-08")
+```
+
+```{r index-by}
+hourly_trips <- nycbikes_ts %>% 
+  index_by(starthour = floor_date(starttime, unit = "1 hour")) %>% 
+  summarise(ntrips = n())
+```
+
+```r
+has_gaps(hourly_trips)
+hourly_trips %>% 
+  fill_gaps(ntrips = 0L) %>% 
+  filter_index(~ "2018-02", "2018-07" ~ "2018-08") %>% 
+  mutate(date = as_date(starthour), time = hour(starthour)) %>% 
+  ggplot(aes(x = time, y = ntrips)) +
+  geom_line() +
+  sugrrants::facet_calendar(~ date)
+
+nycbikes_ts %>% 
+  group_by(usertype) %>% 
+  index_by(hour = hour(starttime)) %>% 
+  summarise(
+    avg_tripd = mean(tripduration),
+    ntrips = n()
+  ) %>% 
+  ggplot(aes(x = hour, y = ntrips, colour = usertype)) +
+  geom_point() +
+  geom_line(aes(group = usertype))
+```
+

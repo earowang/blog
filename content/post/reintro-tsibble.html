@@ -1,0 +1,119 @@
+---
+title: "Reintroduce tsibble: melt the clock"
+description: "A comprehensive guide to tsibble, with a case study about NYC Citi Bike"
+date: "2018-12-14"
+draft: true
+tags: ["r", "tidy data", "time series"]
+---
+
+
+
+<p><img src="https://github.com/tidyverts/tsibble/blob/master/man/figures/logo.png?raw=true" align="right" /></p>
+<p>The <strong>tsibble</strong> package has started development since July 2017, and its <code>v0.6.2</code> has recently landed on CRAN. As I become relatively confident about tsibble’s data structure and software design, I have removed the lifecycle badge declaring the maturing stage since <code>v0.6.0</code>. I’d like to reintroduce tsibble to you and highlight the role tsibble plays in tidy time series analysis.</p>
+<hr />
+<div id="motivation" class="section level2">
+<h2>Motivation</h2>
+</div>
+<div id="tsibble-key-index" class="section level2">
+<h2>tsibble = key + index</h2>
+<pre class="r"><code>(nycbikes18 &lt;- read_nycbikes(year = 2018))</code></pre>
+<pre><code>#&gt; # A tibble: 333,687 x 15
+#&gt;   tripduration starttime           stoptime            `start station …
+#&gt;          &lt;dbl&gt; &lt;dttm&gt;              &lt;dttm&gt;                         &lt;dbl&gt;
+#&gt; 1          932 2018-01-01 02:06:17 2018-01-01 02:21:50             3183
+#&gt; 2          550 2018-01-01 12:06:18 2018-01-01 12:15:28             3183
+#&gt; 3          510 2018-01-01 12:06:56 2018-01-01 12:15:27             3183
+#&gt; # … with 3.337e+05 more rows, and 11 more variables: `start station
+#&gt; #   name` &lt;chr&gt;, `start station latitude` &lt;dbl&gt;, `start station
+#&gt; #   longitude` &lt;dbl&gt;, `end station id` &lt;dbl&gt;, `end station name` &lt;chr&gt;,
+#&gt; #   `end station latitude` &lt;dbl&gt;, `end station longitude` &lt;dbl&gt;,
+#&gt; #   bikeid &lt;dbl&gt;, usertype &lt;chr&gt;, `birth year` &lt;dbl&gt;, gender &lt;dbl&gt;</code></pre>
+<pre class="r"><code>library(tsibble)
+library(tidyverse)
+library(lubridate)
+nycbikes_ts &lt;- nycbikes18 %&gt;% 
+  as_tsibble(key = id(bikeid), index = starttime, regular = FALSE) %&gt;% 
+  print()</code></pre>
+<pre><code>#&gt; # A tsibble: 333,687 x 15 [!] &lt;America/New_York&gt;
+#&gt; # Key:       bikeid [900]
+#&gt;   tripduration starttime           stoptime            `start station …
+#&gt;          &lt;dbl&gt; &lt;dttm&gt;              &lt;dttm&gt;                         &lt;dbl&gt;
+#&gt; 1          164 2018-11-21 07:16:03 2018-11-21 07:18:48             3279
+#&gt; 2          116 2018-11-21 09:59:10 2018-11-21 10:01:06             3272
+#&gt; 3          115 2018-11-22 06:51:08 2018-11-22 06:53:04             3273
+#&gt; # … with 3.337e+05 more rows, and 11 more variables: `start station
+#&gt; #   name` &lt;chr&gt;, `start station latitude` &lt;dbl&gt;, `start station
+#&gt; #   longitude` &lt;dbl&gt;, `end station id` &lt;dbl&gt;, `end station name` &lt;chr&gt;,
+#&gt; #   `end station latitude` &lt;dbl&gt;, `end station longitude` &lt;dbl&gt;,
+#&gt; #   bikeid &lt;dbl&gt;, usertype &lt;chr&gt;, `birth year` &lt;dbl&gt;, gender &lt;dbl&gt;</code></pre>
+</div>
+<div id="tweaks-about-tidyverse-verbs" class="section level2">
+<h2>Tweaks about tidyverse verbs</h2>
+<pre class="r"><code>nycbikes_ts %&gt;% 
+  select(-starttime)</code></pre>
+<pre><code>#&gt; Error: Column `starttime` (index) can&#39;t be removed.
+#&gt; Do you need `as_tibble()` to work with data frame?</code></pre>
+<pre class="r"><code>nycbikes_ts %&gt;% 
+  select(bikeid, tripduration)</code></pre>
+<pre><code>#&gt; Selecting index: &quot;starttime&quot;</code></pre>
+<pre><code>#&gt; # A tsibble: 333,687 x 3 [!] &lt;America/New_York&gt;
+#&gt; # Key:       bikeid [900]
+#&gt;   bikeid tripduration starttime          
+#&gt;    &lt;dbl&gt;        &lt;dbl&gt; &lt;dttm&gt;             
+#&gt; 1  14697          164 2018-11-21 07:16:03
+#&gt; 2  14697          116 2018-11-21 09:59:10
+#&gt; 3  14697          115 2018-11-22 06:51:08
+#&gt; # … with 3.337e+05 more rows</code></pre>
+<pre class="r"><code>nycbikes_ts %&gt;% 
+  mutate(bikeid = 2018L)</code></pre>
+<pre><code>#&gt; Error: The result is not a valid tsibble.
+#&gt; Do you need `as_tibble()` to work with data frame?</code></pre>
+<pre class="r"><code>nycbikes_ts %&gt;% 
+  summarise(ntrip = n())</code></pre>
+<pre><code>#&gt; # A tsibble: 333,682 x 2 [!] &lt;America/New_York&gt;
+#&gt;   starttime           ntrip
+#&gt;   &lt;dttm&gt;              &lt;int&gt;
+#&gt; 1 2018-01-01 00:01:45     1
+#&gt; 2 2018-01-01 01:27:17     1
+#&gt; 3 2018-01-01 01:29:03     1
+#&gt; # … with 3.337e+05 more rows</code></pre>
+</div>
+<div id="new-time-based-verbs" class="section level2">
+<h2>New time-based verbs</h2>
+<pre class="r"><code>nycbikes_ts %&gt;% 
+  filter_index(~ &quot;2018-02&quot;, &quot;2018-07&quot; ~ &quot;2018-08&quot;)</code></pre>
+<pre><code>#&gt; # A tsibble: 114,481 x 15 [!] &lt;America/New_York&gt;
+#&gt; # Key:       bikeid [787]
+#&gt;   tripduration starttime           stoptime            `start station …
+#&gt;          &lt;dbl&gt; &lt;dttm&gt;              &lt;dttm&gt;                         &lt;dbl&gt;
+#&gt; 1         1646 2018-08-16 20:19:52 2018-08-16 20:47:19             3192
+#&gt; 2          503 2018-08-17 07:44:28 2018-08-17 07:52:52             3192
+#&gt; 3          212 2018-08-17 10:06:06 2018-08-17 10:09:39             3186
+#&gt; # … with 1.145e+05 more rows, and 11 more variables: `start station
+#&gt; #   name` &lt;chr&gt;, `start station latitude` &lt;dbl&gt;, `start station
+#&gt; #   longitude` &lt;dbl&gt;, `end station id` &lt;dbl&gt;, `end station name` &lt;chr&gt;,
+#&gt; #   `end station latitude` &lt;dbl&gt;, `end station longitude` &lt;dbl&gt;,
+#&gt; #   bikeid &lt;dbl&gt;, usertype &lt;chr&gt;, `birth year` &lt;dbl&gt;, gender &lt;dbl&gt;</code></pre>
+<pre class="r"><code>hourly_trips &lt;- nycbikes_ts %&gt;% 
+  index_by(starthour = floor_date(starttime, unit = &quot;1 hour&quot;)) %&gt;% 
+  summarise(ntrips = n())</code></pre>
+<pre class="r"><code>has_gaps(hourly_trips)
+hourly_trips %&gt;% 
+  fill_gaps(ntrips = 0L) %&gt;% 
+  filter_index(~ &quot;2018-02&quot;, &quot;2018-07&quot; ~ &quot;2018-08&quot;) %&gt;% 
+  mutate(date = as_date(starthour), time = hour(starthour)) %&gt;% 
+  ggplot(aes(x = time, y = ntrips)) +
+  geom_line() +
+  sugrrants::facet_calendar(~ date)
+
+nycbikes_ts %&gt;% 
+  group_by(usertype) %&gt;% 
+  index_by(hour = hour(starttime)) %&gt;% 
+  summarise(
+    avg_tripd = mean(tripduration),
+    ntrips = n()
+  ) %&gt;% 
+  ggplot(aes(x = hour, y = ntrips, colour = usertype)) +
+  geom_point() +
+  geom_line(aes(group = usertype))</code></pre>
+</div>
