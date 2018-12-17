@@ -8,11 +8,11 @@ tags: ["r", "tidy data", "time series"]
 
 
 
-<p>The development of the <a href="http://github.com/tidyverts/tsibble"><strong>tsibble</strong></a> package has been taking place since July 2017, and its <code>v0.6.2</code> has recently landed on CRAN. Yup, it’s already <code>v0.6.2</code>. As I become more confident about tsibble’s data structure and software design, I have removed the lifecycle badge declaring the maturing stage since <code>v0.6.0</code>. I’d like to reintroduce tsibble to you and highlight the role tsibble plays in tidy time series analysis.</p>
+<p>The development of the <a href="http://github.com/tidyverts/tsibble"><strong>tsibble</strong></a> package has been taking place since July 2017, and its <code>v0.6.2</code> has recently landed on CRAN. Yup, it’s already <code>v0.6.2</code> and has evolved rapidly. As I become more confident about tsibble’s data structure and software design, I have removed the lifecycle badge declaring the maturing stage since <code>v0.6.0</code>. I’d like to reintroduce tsibble to you and highlight the role tsibble plays in tidy time series analysis.</p>
 <hr />
 <div id="motivation" class="section level2">
 <h2>Motivation</h2>
-<p>If data comes with a time variable, it is referred to as “temporal data”. Data arrives in many formats, so does time. However most existing time series objects, particularly R’s native time series object (<code>ts</code>), are model-focused assuming a matrix with implicit time indices. Figure <a href="#fig:motivation">1</a> shows the lumpy path about getting wild temporal data into model-ready objects, with myriads of ad hoc and duplicated efforts. The data pre-processing can be largely formalised with tools provided by tsibble. But tsibble’s scope goes beyond that. It aims at defining tidy temporal data standard and laying a pipeline infrastructure for streamlining the time series workflow including transformation, visualisation and modelling.</p>
+<p>If data comes with a time variable, it is referred to as “temporal data”. Data arrives in many formats, so does time. However most existing time series objects, particularly R’s native time series object (<code>ts</code>), are simplistically model-focused assuming a matrix with implicit time indices. Figure <a href="#fig:motivation">1</a> shows the lumpy path about getting wild temporal data into model-ready objects, with myriads of ad hoc and duplicated efforts. The data pre-processing can be largely formalised with tools provided by tsibble. But tsibble’s scope goes beyond that. It aims at defining tidy temporal data standard and laying a pipeline infrastructure for streamlining the time series workflow including transformation, visualisation and modelling.</p>
 <div class="figure"><span id="fig:motivation"></span>
 <img src="/img/motivation.png" alt="Can we flatten the lumpy path of converting raw temporal data to model-ready objects?"  />
 <p class="caption">
@@ -48,8 +48,9 @@ library(tidyverse)
 library(lubridate)
 nycbikes_ts &lt;- nycbikes18 %&gt;% 
   as_tsibble(key = id(bikeid), index = starttime, regular = FALSE)</code></pre>
-<p>A check with <code>validate = TRUE</code> is performed during the tsibble construction to validate if the key and index determine distinct rows. Duplicates signal a data quality issue, which would likely affect subsequent analyses and hence decision making. Users are encouraged to gaze at data early and reason the process of data cleaning. <code>duplicates()</code> helps to find identical key-index entries. The key-index uniqueness ensures a tsibble to be a natural input for time series models.</p>
-<p>The print output of a tibble gives a quick glimpse at the data, and the tsibble’s print method adds more contextual information. Alongside the data dimension, we are informed by the time interval (<code>[!]</code> for irregularity) and index’s time zone if it’s <code>POSIXct</code>; the “key” variables are reported, with the number of units in the data. 900 bikes have been served for 333,687 trips in 2018. Displaying time zones is useful too, because time zones associated with <code>POSIXct</code> are concealed in data frames. Time zone is a critical piece when manipulating time. Especially, the data time zone is neither “UTC” nor my local time zone (“Australia/Melbourne”). When parsing characters to date-times, lubridate functions (such as <code>ymd_h()</code>) default to “UTC” whereas base functions (such as <code>as.POSIXct()</code>) sets to local time zone.</p>
+<p>A check with <code>validate = TRUE</code> is performed during the tsibble construction to validate if the key and index determine distinct rows. Duplicates signal a data quality issue, which would likely affect subsequent analyses and hence decision making. Users are encouraged to gaze at data early and reason the process of data cleaning. <code>duplicates()</code> helps to find identical key-index entries. The key-index uniqueness ensures a tsibble to be a valid input for time series analytics and models.</p>
+<p>Some types of operation assume an input in a strict temporal order, such as <code>lag()</code>, <code>lead()</code> and <code>difference()</code>. Hence the ordering of data rows is arranged in the first place by the key and then index from past to recent.</p>
+<p>The print output of a tibble gives a quick glimpse at the data, and the tsibble’s print method adds more contextual information. Alongside the data dimension, we are informed by the time interval (<code>[!]</code> for irregularity) and index’s time zone if it’s <code>POSIXct</code>; the “key” variables are reported, with the number of units in the data. 900 bikes have been served for 333,687 trips in 2018. Displaying time zones is useful too, because time zones associated with <code>POSIXct</code> are concealed in data frames. Time zone is a critical piece when manipulating time. Especially, the data time zone is neither “UTC” nor my local time zone (“Australia/Melbourne”). When parsing characters to date-times, lubridate functions (such as <code>ymd_hms()</code>) default to “UTC” whereas base functions (such as <code>as.POSIXct()</code>) sets to local time zone.</p>
 <pre class="r"><code>nycbikes_ts</code></pre>
 <pre><code>#&gt; # A tsibble: 333,687 x 15 [!] &lt;America/New_York&gt;
 #&gt; # Key:       bikeid [900]
@@ -67,10 +68,13 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 </div>
 <div id="column-wise-tidyverse-verbs" class="section level2">
 <h2>Column-wise tidyverse verbs</h2>
+<p>Tsibble is essentially a tibble with extra contextual semantics: key and index. The tidyverse methods can be naturally applied to a tsibble. Row-wise verbs, for example <code>filter()</code> and <code>arrange()</code>, work for a tsibble in exactly the same way as a general data frame, but column-wise verbs behave differently yet intentionally.</p>
+<p>The index column cannot be dropped.</p>
 <pre class="r"><code>nycbikes_ts %&gt;% 
   select(-starttime)</code></pre>
 <pre><code>#&gt; Error: Column `starttime` (index) can&#39;t be removed.
 #&gt; Do you need `as_tibble()` to work with data frame?</code></pre>
+<p>Column selection always includes the index.</p>
 <pre class="r"><code>nycbikes_ts %&gt;% 
   select(bikeid, tripduration)</code></pre>
 <pre><code>#&gt; Selecting index: &quot;starttime&quot;</code></pre>
@@ -83,10 +87,12 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 #&gt; 3  14697          115 2018-11-22 06:51:08
 #&gt; 4  14697          135 2018-11-23 09:59:57
 #&gt; # … with 3.337e+05 more rows</code></pre>
+<p>Modifying the key variable results in an invalid tsibble.</p>
 <pre class="r"><code>nycbikes_ts %&gt;% 
   mutate(bikeid = 2018L)</code></pre>
 <pre><code>#&gt; Error: The result is not a valid tsibble.
 #&gt; Do you need `as_tibble()` to work with data frame?</code></pre>
+<p>Summarising a tsibble reduces to a sequence of unique time points instead of a single value.</p>
 <pre class="r"><code>nycbikes_ts %&gt;% 
   summarise(ntrip = n())</code></pre>
 <pre><code>#&gt; # A tsibble: 333,682 x 2 [!] &lt;America/New_York&gt;
@@ -97,6 +103,7 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 #&gt; 3 2018-01-01 01:29:03     1
 #&gt; 4 2018-01-01 01:59:31     1
 #&gt; # … with 3.337e+05 more rows</code></pre>
+<p>If a tsibble cannot be maintained in the output of a pipeline module, for example the index is dropped, an error informs users of the problem and suggests alternatives. This avoids negatively surprising users and reminds them of time context.</p>
 </div>
 <div id="new-time-based-verbs" class="section level2">
 <h2>New time-based verbs</h2>
@@ -117,17 +124,29 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 #&gt; #   bikeid &lt;dbl&gt;, usertype &lt;chr&gt;, `birth year` &lt;dbl&gt;, gender &lt;dbl&gt;</code></pre>
 <pre class="r"><code>hourly_trips &lt;- nycbikes_ts %&gt;% 
   index_by(starthour = floor_date(starttime, unit = &quot;1 hour&quot;)) %&gt;% 
-  summarise(ntrips = n())</code></pre>
+  summarise(ntrips = n()) %&gt;% 
+  print()</code></pre>
+<pre><code>#&gt; # A tsibble: 7,648 x 2 [1h] &lt;America/New_York&gt;
+#&gt;   starthour           ntrips
+#&gt;   &lt;dttm&gt;               &lt;int&gt;
+#&gt; 1 2018-01-01 00:00:00      1
+#&gt; 2 2018-01-01 01:00:00      3
+#&gt; 3 2018-01-01 02:00:00      3
+#&gt; 4 2018-01-01 03:00:00      7
+#&gt; # … with 7,644 more rows</code></pre>
 <pre class="r"><code>has_gaps(hourly_trips)
-hourly_trips %&gt;% 
+scan_gaps(hourly_trips)
+count_gaps(hourly_trips)</code></pre>
+<pre class="r"><code>hourly_trips %&gt;% 
   fill_gaps(ntrips = 0L) %&gt;% 
   filter_index(~ &quot;2018-02&quot;, &quot;2018-07&quot; ~ &quot;2018-08&quot;) %&gt;% 
   mutate(date = as_date(starthour), time = hour(starthour)) %&gt;% 
   ggplot(aes(x = time, y = ntrips)) +
   geom_line() +
-  sugrrants::facet_calendar(~ date)
-
-nycbikes_ts %&gt;% 
+  sugrrants::facet_calendar(~ date) +
+  scale_x_continuous(breaks = c(6, 18))</code></pre>
+<p><img src="/post/reintro-tsibble_files/figure-html/calendar-1.png" width="672" /></p>
+<pre class="r"><code>nycbikes_ts %&gt;% 
   group_by(usertype) %&gt;% 
   index_by(hour = hour(starttime)) %&gt;% 
   summarise(
@@ -137,4 +156,5 @@ nycbikes_ts %&gt;%
   ggplot(aes(x = hour, y = ntrips, colour = usertype)) +
   geom_point() +
   geom_line(aes(group = usertype))</code></pre>
+<p><img src="/post/reintro-tsibble_files/figure-html/usertype-1.png" width="672" /></p>
 </div>
