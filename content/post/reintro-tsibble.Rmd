@@ -8,16 +8,14 @@ tags: ["r", "tidy data", "time series"]
 
 ```{r setup, echo = FALSE}
 knitr::opts_chunk$set(comment = "#>")
-options(tibble.print_min = 3)
+options(tibble.print_min = 4)
 ```
 
-<img src="https://github.com/tidyverts/tsibble/blob/master/man/figures/logo.png?raw=true" align="right" />
-
-The **tsibble** package has started development since July 2017, and its `v0.6.2` has recently landed on CRAN. As I become relatively confident about tsibble's data structure and software design, I have removed the lifecycle badge declaring the maturing stage since `v0.6.0`. I'd like to reintroduce tsibble to you and highlight the role tsibble plays in tidy time series analysis.
+The development of the [**tsibble**](http://github.com/tidyverts/tsibble) package has been taking place since July 2017, and its `v0.6.2` has recently landed on CRAN. Yup, it's already `v0.6.2`. As I become more confident about tsibble's data structure and software design, I have removed the lifecycle badge declaring the maturing stage since `v0.6.0`. I'd like to reintroduce tsibble to you and highlight the role tsibble plays in tidy time series analysis.
 
 ---
 
-```{r fun-nycbikes, echo = FALSE}
+```{r fun-nycbikes, echo = FALSE, message = FALSE, eval = FALSE}
 read_nycbikes <- function(year) {
   today <- Sys.Date()
   mth <- 12
@@ -31,30 +29,59 @@ read_nycbikes <- function(year) {
   file <- basename(url)
   dest_file <- fs::path(temp_dir, file)
   purrr::map2(url, dest_file, ~ download.file(.x, .y, quiet = TRUE))
-  purrr::map_dfr(dest_file,
+  dat <- purrr::map_dfr(dest_file,
     ~ readr::read_csv(., locale = readr::locale(tz = "America/New_York"))
   )
+  fs::dir_create("data")
+  readr::write_rds(dat, here::here("static", "data", "nycbikes18.rds"))
 }
+read_nycbikes(year = 2018)
 ```
 
 ## Motivation
 
+If data comes with a time variable, it is referred to as "temporal data". Data arrives in many formats, so does time. However most existing time series objects, particularly R's native time series object (`ts`), are model-focused assuming a matrix with implicit time indices. Figure \@ref(fig:motivation) shows the lumpy path about getting wild temporal data into model-ready objects, with myriads of ad hoc and duplicated efforts. The data pre-processing can be largely formalised with tools provided by tsibble. But tsibble's scope goes beyond that. It aims at defining tidy temporal data standard and laying a pipeline infrastructure for streamlining the time series workflow including transformation, visualisation and modelling.
+
+```{r motivation, echo = FALSE, fig.cap = "Can we flatten the lumpy path of converting raw temporal data to model-ready objects?"}
+knitr::include_graphics("/img/motivation.png")
+```
+
+```{r data-science, echo = FALSE, fig.cap = "A typical data science project (R for Data Science)."}
+knitr::include_graphics("https://r4ds.had.co.nz/diagrams/data-science.png")
+```
+
 ## tsibble = key + index
 
-```{r nycbikes18, message = FALSE}
-(nycbikes18 <- read_nycbikes(year = 2018))
+```{r nycbikes18, echo = FALSE}
+nycbikes18 <- readr::read_rds(here::here("static", "data", "nycbikes18.rds"))
 ```
+
+We're going to explore [Citi bike trips in New York City](https://www.citibikenyc.com/system-data), with the focus on temporal context. The dataset comprises `r format(NROW(nycbikes18), big.mark = ",")` trips from January 2018 till November, each connecting to its bike id, durations, station's geography and rider's demography.
+
+```{r print-nycbikes18}
+nycbikes18
+```
+
+It arrives in the "tidy data" format, where each observation describes a trip event about a registered bike at a particular time point. Each bike (`bikeid`) is the observational unit that we'd like to study over time, forming the "key"; its starting time (`starttime`) provides the time basis. Whilst creating a tsibble, we have to declare the key and index. The data is all about events with irregularly spaced in time, thus specifying `regular = FALSE`.
 
 ```{r create-tsibble, message = FALSE}
 library(tsibble)
 library(tidyverse)
 library(lubridate)
 nycbikes_ts <- nycbikes18 %>% 
-  as_tsibble(key = id(bikeid), index = starttime, regular = FALSE) %>% 
-  print()
+  as_tsibble(key = id(bikeid), index = starttime, regular = FALSE)
 ```
 
-## Tweaks about tidyverse verbs
+A check with `validate = TRUE` is performed during the tsibble construction to validate if the key and index determine distinct rows. Duplicates signal a data quality issue, which would likely affect subsequent analyses and hence decision making. Users are encouraged to gaze at data early and reason the process of data cleaning. `duplicates()` helps to find identical key-index entries. The key-index uniqueness ensures a tsibble to be a natural input for time series models.
+
+The print output of a tibble gives a quick glimpse at the data, and the tsibble's print method adds more contextual information. Alongside the data dimension, we are informed by the time interval (`[!]` for irregularity) and index's time zone if it's `POSIXct`; the "key" variables are reported, with the number of units in the data. 900 bikes have been served for `r format(NROW(nycbikes18), big.mark = ",")` trips in 2018. Displaying time zones is useful too, because time zones associated with `POSIXct` are concealed in data frames. Time zone is a critical piece when manipulating time. Especially, the data time zone is neither "UTC" nor my local time zone ("Australia/Melbourne"). When parsing characters to date-times, lubridate functions (such as `ymd_h()`) default to "UTC" whereas base functions (such as `as.POSIXct()`) sets to local time zone.
+
+```{r print}
+nycbikes_ts
+```
+
+
+## Column-wise tidyverse verbs
 
 ```{r select1, error = TRUE}
 nycbikes_ts %>% 

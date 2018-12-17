@@ -1,39 +1,56 @@
 ---
 title: "Reintroduce tsibble: melt the clock"
 description: "A comprehensive guide to tsibble, with a case study about NYC Citi Bike"
-date: "2018-12-14"
+date: "2018-12-17"
 draft: true
 tags: ["r", "tidy data", "time series"]
 ---
 
 
 
-<p><img src="https://github.com/tidyverts/tsibble/blob/master/man/figures/logo.png?raw=true" align="right" /></p>
-<p>The <strong>tsibble</strong> package has started development since July 2017, and its <code>v0.6.2</code> has recently landed on CRAN. As I become relatively confident about tsibble’s data structure and software design, I have removed the lifecycle badge declaring the maturing stage since <code>v0.6.0</code>. I’d like to reintroduce tsibble to you and highlight the role tsibble plays in tidy time series analysis.</p>
+<p>The development of the <a href="http://github.com/tidyverts/tsibble"><strong>tsibble</strong></a> package has been taking place since July 2017, and its <code>v0.6.2</code> has recently landed on CRAN. Yup, it’s already <code>v0.6.2</code>. As I become more confident about tsibble’s data structure and software design, I have removed the lifecycle badge declaring the maturing stage since <code>v0.6.0</code>. I’d like to reintroduce tsibble to you and highlight the role tsibble plays in tidy time series analysis.</p>
 <hr />
 <div id="motivation" class="section level2">
 <h2>Motivation</h2>
+<p>If data comes with a time variable, it is referred to as “temporal data”. Data arrives in many formats, so does time. However most existing time series objects, particularly R’s native time series object (<code>ts</code>), are model-focused assuming a matrix with implicit time indices. Figure <a href="#fig:motivation">1</a> shows the lumpy path about getting wild temporal data into model-ready objects, with myriads of ad hoc and duplicated efforts. The data pre-processing can be largely formalised with tools provided by tsibble. But tsibble’s scope goes beyond that. It aims at defining tidy temporal data standard and laying a pipeline infrastructure for streamlining the time series workflow including transformation, visualisation and modelling.</p>
+<div class="figure"><span id="fig:motivation"></span>
+<img src="/img/motivation.png" alt="Can we flatten the lumpy path of converting raw temporal data to model-ready objects?"  />
+<p class="caption">
+Figure 1: Can we flatten the lumpy path of converting raw temporal data to model-ready objects?
+</p>
+</div>
+<div class="figure"><span id="fig:data-science"></span>
+<img src="https://r4ds.had.co.nz/diagrams/data-science.png" alt="A typical data science project (R for Data Science)."  />
+<p class="caption">
+Figure 2: A typical data science project (R for Data Science).
+</p>
+</div>
 </div>
 <div id="tsibble-key-index" class="section level2">
 <h2>tsibble = key + index</h2>
-<pre class="r"><code>(nycbikes18 &lt;- read_nycbikes(year = 2018))</code></pre>
+<p>We’re going to explore <a href="https://www.citibikenyc.com/system-data">Citi bike trips in New York City</a>, with the focus on temporal context. The dataset comprises 333,687 trips from January 2018 till November, each connecting to its bike id, durations, station’s geography and rider’s demography.</p>
+<pre class="r"><code>nycbikes18</code></pre>
 <pre><code>#&gt; # A tibble: 333,687 x 15
 #&gt;   tripduration starttime           stoptime            `start station …
 #&gt;          &lt;dbl&gt; &lt;dttm&gt;              &lt;dttm&gt;                         &lt;dbl&gt;
 #&gt; 1          932 2018-01-01 02:06:17 2018-01-01 02:21:50             3183
 #&gt; 2          550 2018-01-01 12:06:18 2018-01-01 12:15:28             3183
 #&gt; 3          510 2018-01-01 12:06:56 2018-01-01 12:15:27             3183
+#&gt; 4          354 2018-01-01 14:53:10 2018-01-01 14:59:05             3183
 #&gt; # … with 3.337e+05 more rows, and 11 more variables: `start station
 #&gt; #   name` &lt;chr&gt;, `start station latitude` &lt;dbl&gt;, `start station
 #&gt; #   longitude` &lt;dbl&gt;, `end station id` &lt;dbl&gt;, `end station name` &lt;chr&gt;,
 #&gt; #   `end station latitude` &lt;dbl&gt;, `end station longitude` &lt;dbl&gt;,
 #&gt; #   bikeid &lt;dbl&gt;, usertype &lt;chr&gt;, `birth year` &lt;dbl&gt;, gender &lt;dbl&gt;</code></pre>
+<p>It arrives in the “tidy data” format, where each observation describes a trip event about a registered bike at a particular time point. Each bike (<code>bikeid</code>) is the observational unit that we’d like to study over time, forming the “key”; its starting time (<code>starttime</code>) provides the time basis. Whilst creating a tsibble, we have to declare the key and index. The data is all about events with irregularly spaced in time, thus specifying <code>regular = FALSE</code>.</p>
 <pre class="r"><code>library(tsibble)
 library(tidyverse)
 library(lubridate)
 nycbikes_ts &lt;- nycbikes18 %&gt;% 
-  as_tsibble(key = id(bikeid), index = starttime, regular = FALSE) %&gt;% 
-  print()</code></pre>
+  as_tsibble(key = id(bikeid), index = starttime, regular = FALSE)</code></pre>
+<p>A check with <code>validate = TRUE</code> is performed during the tsibble construction to validate if the key and index determine distinct rows. Duplicates signal a data quality issue, which would likely affect subsequent analyses and hence decision making. Users are encouraged to gaze at data early and reason the process of data cleaning. <code>duplicates()</code> helps to find identical key-index entries. The key-index uniqueness ensures a tsibble to be a natural input for time series models.</p>
+<p>The print output of a tibble gives a quick glimpse at the data, and the tsibble’s print method adds more contextual information. Alongside the data dimension, we are informed by the time interval (<code>[!]</code> for irregularity) and index’s time zone if it’s <code>POSIXct</code>; the “key” variables are reported, with the number of units in the data. 900 bikes have been served for 333,687 trips in 2018. Displaying time zones is useful too, because time zones associated with <code>POSIXct</code> are concealed in data frames. Time zone is a critical piece when manipulating time. Especially, the data time zone is neither “UTC” nor my local time zone (“Australia/Melbourne”). When parsing characters to date-times, lubridate functions (such as <code>ymd_h()</code>) default to “UTC” whereas base functions (such as <code>as.POSIXct()</code>) sets to local time zone.</p>
+<pre class="r"><code>nycbikes_ts</code></pre>
 <pre><code>#&gt; # A tsibble: 333,687 x 15 [!] &lt;America/New_York&gt;
 #&gt; # Key:       bikeid [900]
 #&gt;   tripduration starttime           stoptime            `start station …
@@ -41,14 +58,15 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 #&gt; 1          164 2018-11-21 07:16:03 2018-11-21 07:18:48             3279
 #&gt; 2          116 2018-11-21 09:59:10 2018-11-21 10:01:06             3272
 #&gt; 3          115 2018-11-22 06:51:08 2018-11-22 06:53:04             3273
+#&gt; 4          135 2018-11-23 09:59:57 2018-11-23 10:02:13             3272
 #&gt; # … with 3.337e+05 more rows, and 11 more variables: `start station
 #&gt; #   name` &lt;chr&gt;, `start station latitude` &lt;dbl&gt;, `start station
 #&gt; #   longitude` &lt;dbl&gt;, `end station id` &lt;dbl&gt;, `end station name` &lt;chr&gt;,
 #&gt; #   `end station latitude` &lt;dbl&gt;, `end station longitude` &lt;dbl&gt;,
 #&gt; #   bikeid &lt;dbl&gt;, usertype &lt;chr&gt;, `birth year` &lt;dbl&gt;, gender &lt;dbl&gt;</code></pre>
 </div>
-<div id="tweaks-about-tidyverse-verbs" class="section level2">
-<h2>Tweaks about tidyverse verbs</h2>
+<div id="column-wise-tidyverse-verbs" class="section level2">
+<h2>Column-wise tidyverse verbs</h2>
 <pre class="r"><code>nycbikes_ts %&gt;% 
   select(-starttime)</code></pre>
 <pre><code>#&gt; Error: Column `starttime` (index) can&#39;t be removed.
@@ -63,6 +81,7 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 #&gt; 1  14697          164 2018-11-21 07:16:03
 #&gt; 2  14697          116 2018-11-21 09:59:10
 #&gt; 3  14697          115 2018-11-22 06:51:08
+#&gt; 4  14697          135 2018-11-23 09:59:57
 #&gt; # … with 3.337e+05 more rows</code></pre>
 <pre class="r"><code>nycbikes_ts %&gt;% 
   mutate(bikeid = 2018L)</code></pre>
@@ -76,6 +95,7 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 #&gt; 1 2018-01-01 00:01:45     1
 #&gt; 2 2018-01-01 01:27:17     1
 #&gt; 3 2018-01-01 01:29:03     1
+#&gt; 4 2018-01-01 01:59:31     1
 #&gt; # … with 3.337e+05 more rows</code></pre>
 </div>
 <div id="new-time-based-verbs" class="section level2">
@@ -89,6 +109,7 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 #&gt; 1         1646 2018-08-16 20:19:52 2018-08-16 20:47:19             3192
 #&gt; 2          503 2018-08-17 07:44:28 2018-08-17 07:52:52             3192
 #&gt; 3          212 2018-08-17 10:06:06 2018-08-17 10:09:39             3186
+#&gt; 4          485 2018-08-18 11:08:00 2018-08-18 11:16:06             3483
 #&gt; # … with 1.145e+05 more rows, and 11 more variables: `start station
 #&gt; #   name` &lt;chr&gt;, `start station latitude` &lt;dbl&gt;, `start station
 #&gt; #   longitude` &lt;dbl&gt;, `end station id` &lt;dbl&gt;, `end station name` &lt;chr&gt;,
