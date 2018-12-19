@@ -16,7 +16,7 @@ options(tibble.print_min = 4)
 
 ## Preface
 
-The development of the [**tsibble**](http://github.com/tidyverts/tsibble) package has been taking place since July 2017, and its `v0.6.2` has recently landed on CRAN. Yup, it's already `v0.6.2` and has evolved rapidly. As I become more confident about *tsibble*'s data structure and software design, I have removed the lifecycle badge declaring the maturing stage since `v0.6.0`. I have [introduced tsibble](https://blog.earo.me/2018/02/06/tsibble-or-tibbletime/) before in comparison with another package. Now I'd like to reintroduce **tsibble** (bold for package) to you and highlight the role *tsibble* (italic for data structure) plays in tidy time series analysis.
+The development of the [**tsibble**](http://github.com/tidyverts/tsibble) package has been taking place since July 2017, and its `v0.6.2` has recently landed on CRAN. Yup, it's already `v0.6.2` and has evolved rapidly. As I become more confident about *tsibble*'s data structure and software design, I have removed the lifecycle badge, thus declaring the matururity of this versions. I have [introduced tsibble](https://blog.earo.me/2018/02/06/tsibble-or-tibbletime/) before in comparison with another package. Now I'd like to reintroduce **tsibble** (bold for package) to you and highlight the role *tsibble* (italic for data structure) plays in tidy time series analysis.
 
 ```{r fun-nycbikes, echo = FALSE, message = FALSE, eval = FALSE}
 read_nycbikes <- function(year) {
