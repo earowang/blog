@@ -1,7 +1,7 @@
 ---
 title: "Reintroducing tsibble: data tools that melt the clock"
 description: "A comprehensive description of tsibble, with a case study of NYC Citi Bike"
-date: "`r Sys.Date()`"
+date: "2018-12-20"
 output:
   blogdown::html_page:
     toc: true
@@ -13,7 +13,9 @@ knitr::opts_chunk$set(comment = "#>")
 options(tibble.print_min = 4)
 ```
 
-## Preface
+## Preface 
+
+<img src="https://github.com/tidyverts/tsibble/blob/master/man/figures/logo.png?raw=true" align="right" />
 
 I have [introduced tsibble](https://blog.earo.me/2018/02/06/tsibble-or-tibbletime/) before in comparison with another package. Now I'd like to reintroduce [**tsibble**](http://github.com/tidyverts/tsibble) (bold for package) to you and highlight the role *tsibble* (italic for data structure) plays in tidy time series analysis.
 
@@ -136,7 +138,7 @@ nycbikes_ts %>%
   )
 ```
 
-*Tsibble* knows the index coupled with time zone, and thereby a shorthand `filter_index()` is for conveniently filtering time. Initially I was reluctant to add this feature, but it is too verbose when involving time zone specification. The resulting equivalent saves us a few keystrokes without losing much expressiveness.
+*Tsibble* knows the index coupled with time zone, and thereby a shorthand `filter_index()` is for conveniently filtering time. Initially I was hesitant to add this feature, but it is too verbose when involving time zone specification. The resulting equivalent saves us a few keystrokes without losing much expressiveness.
 
 ```{r filter-index}
 nycbikes_ts %>% 

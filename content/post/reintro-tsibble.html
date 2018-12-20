@@ -22,6 +22,7 @@ tags: ["r", "tidy data", "time series"]
 
 <div id="preface" class="section level2">
 <h2>Preface</h2>
+<p><img src="https://github.com/tidyverts/tsibble/blob/master/man/figures/logo.png?raw=true" align="right" /></p>
 <p>I have <a href="https://blog.earo.me/2018/02/06/tsibble-or-tibbletime/">introduced tsibble</a> before in comparison with another package. Now I’d like to reintroduce <a href="http://github.com/tidyverts/tsibble"><strong>tsibble</strong></a> (bold for package) to you and highlight the role <em>tsibble</em> (italic for data structure) plays in tidy time series analysis.</p>
 <p>The development of the <strong>tsibble</strong> package has been taking place since July 2017, and <code>v0.6.2</code> has landed on CRAN in mid-December. Yup, there have been 14 CRAN releases since the initial release, and it has evolved substantially. I’m confident in the <em>tsibble</em>’s data structure and software design, so the lifecycle badge has been removed, thus declaring the maturity of this version.</p>
 </div>
@@ -139,7 +140,7 @@ nycbikes_ts %&gt;%
     starttime &gt;= ymd(&quot;2018-07-01&quot;, tz = tzone),
     starttime &lt;= ymd(&quot;2018-08-31&quot;, tz = tzone)
   )</code></pre>
-<p><em>Tsibble</em> knows the index coupled with time zone, and thereby a shorthand <code>filter_index()</code> is for conveniently filtering time. Initially I was reluctant to add this feature, but it is too verbose when involving time zone specification. The resulting equivalent saves us a few keystrokes without losing much expressiveness.</p>
+<p><em>Tsibble</em> knows the index coupled with time zone, and thereby a shorthand <code>filter_index()</code> is for conveniently filtering time. Initially I was hesitant to add this feature, but it is too verbose when involving time zone specification. The resulting equivalent saves us a few keystrokes without losing much expressiveness.</p>
 <pre class="r"><code>nycbikes_ts %&gt;% 
   filter_index(~ &quot;2018-02&quot;, &quot;2018-07&quot; ~ &quot;2018-08&quot;)</code></pre>
 <pre><code>#&gt; # A tsibble: 114,481 x 15 [!] &lt;America/New_York&gt;
