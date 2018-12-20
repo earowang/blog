@@ -1,11 +1,10 @@
 ---
-title: "Reintroduce tsibble: melt the clock"
-description: "A comprehensive guide to tsibble, with a case study about NYC Citi Bike"
+title: "Reintroducing tsibble: data tools that melt the clock"
+description: "A comprehensive description of tsibble, with a case study of NYC Citi Bike"
 date: "`r Sys.Date()`"
 output:
   blogdown::html_page:
     toc: true
-draft: true
 tags: ["r", "tidy data", "time series"]
 ---
 
@@ -16,7 +15,9 @@ options(tibble.print_min = 4)
 
 ## Preface
 
-The development of the [**tsibble**](http://github.com/tidyverts/tsibble) package has been taking place since July 2017, and its `v0.6.2` has recently landed on CRAN. Yup, it's already `v0.6.2` and has evolved rapidly. As I become more confident about *tsibble*'s data structure and software design, I have removed the lifecycle badge, thus declaring the matururity of this versions. I have [introduced tsibble](https://blog.earo.me/2018/02/06/tsibble-or-tibbletime/) before in comparison with another package. Now I'd like to reintroduce **tsibble** (bold for package) to you and highlight the role *tsibble* (italic for data structure) plays in tidy time series analysis.
+I have [introduced tsibble](https://blog.earo.me/2018/02/06/tsibble-or-tibbletime/) before in comparison with another package. Now I'd like to reintroduce [**tsibble**](http://github.com/tidyverts/tsibble) (bold for package) to you and highlight the role *tsibble* (italic for data structure) plays in tidy time series analysis.
+
+The development of the **tsibble** package has been taking place since July 2017, and `v0.6.2` has landed on CRAN in mid-December. Yup, there have been 14 CRAN releases since the initial release, and it has evolved substantially. I'm confident in the *tsibble*'s data structure and software design, so the lifecycle badge has been removed, thus declaring the maturity of this version. 
 
 ```{r fun-nycbikes, echo = FALSE, message = FALSE, eval = FALSE}
 read_nycbikes <- function(year) {
@@ -47,13 +48,13 @@ read_nycbikes(year = 2018)
 knitr::include_graphics("/img/motivation.png")
 ```
 
-If data comes with a time variable, it is referred to as "temporal data". Data arrives in many formats, so does time. However most existing time series objects, particularly R's native time series object (`ts`), are model-focused assuming a matrix with implicit time indices. Figure \@ref(fig:motivation) shows the lumpy path about getting wild temporal data into model-ready objects, with myriads of ad hoc and duplicated efforts. The data pre-processing can be largely formalised with tools provided by **tsibble**. But **tsibble**'s scope goes beyond that. It aims at providing tidy temporal data abstraction and laying a pipeline infrastructure for streamlining the time series workflow including transformation, visualisation and modelling (see Figure \@ref(fig:data-science)).
+If data comes with a time variable, it is referred to as "temporal data". Data arrives in many formats, so does time. However most existing time series objects, particularly R's native time series object (`ts`), are model-focused assuming a matrix with implicit time indices. Figure \@ref(fig:motivation) expresses the lumpy path to get from wild temporal data into model-ready objects, with myriads of ad hoc and duplicated efforts. 
+
+However, the temporal data pre-processing can be largely formalised,  and the tools provided by **tsibble** do this, and more. It provides tidy temporal data abstraction and lays a pipeline infrastructure for streamlining the time series workflow including transformation, visualisation and modelling. Figure \@ref(fig:data-science) illustrates how it fits into the tidy workflow model. Current time series objects feed into the framework solely at the modelling stage, expecting the analyst to take care of anything else needed to get to this stage. The diagram correspondingly would place the model at the centre of the analytical universe, and all the transformations, visualisations would hinge on that format. This is contrary to the tidyverse conceptualisation, which wholisticlly captures the full data workflow. The choice of *tsibble*'s abstraction arises from a data-centric perspective, which accommodates all of the operations that are to be performed on the data. Users who are already familiar with the tidyverse, will experience a gentle learning curve for mastering [**tsibble**](https://pkg.earo.me/tsibble/reference/index.html) and glide into temporal data analysis with low cognitive load.
 
 ```{r data-science, echo = FALSE, fig.cap = "Where do temporal data, tsibble and current time series objects feed in the data science pipeline?"}
 knitr::include_graphics("/img/ds-pipeline.png")
 ```
-
-Current time series objects are simplistic data representations tailored for models. We are expected to learn a different set of tools from what we are used to (saying the tidyverse) in order to transform and visualise time series. By contrast, the choice of *tsibble*'s abstraction is made from a data-centric perspective, which is taken in the light of the operations that are to be performed on the data. Users who are already familiar with the tidyverse, will experience a gentle learning curve for mastering [**tsibble**](https://pkg.earo.me/tsibble/reference/index.html) and glide into temporal data analysis with low cognitive load.
 
 ## tsibble = key + index
 
@@ -61,13 +62,13 @@ Current time series objects are simplistic data representations tailored for mod
 nycbikes18 <- readr::read_rds(here::here("static", "data", "nycbikes18.rds"))
 ```
 
-We're going to explore [Citi bike trips in New York City](https://www.citibikenyc.com/system-data), with the focus on temporal context. The dataset comprises `r format(NROW(nycbikes18), big.mark = ",")` trips from January 2018 till November, each connecting to its bike id, durations, station's geography and rider's demography.
+We're going to explore [Citi bike trips in New York City](https://www.citibikenyc.com/system-data), with the focus on temporal context. The dataset comprises `r format(NROW(nycbikes18), big.mark = ",")` trips from January 2018 till November, each connecting to its bike id, duration, station's geography and rider's demography.
 
 ```{r print-nycbikes18}
 nycbikes18
 ```
 
-It arrives in the "melting" format, where each observation describes a trip event about a registered bike at a particular time point. Each bike (`bikeid`) is the observational unit that we'd like to study over time, forming the "key"; its starting time (`starttime`) provides the time basis. Whilst creating a *tsibble*, we have to declare the key and index. The data is all about events with irregularly spaced in time, thus specifying `regular = FALSE`.
+It arrives in the "melted" format, where each observation describes a trip event about a registered bike at a particular time point. Each bike (`bikeid`) is the observational unit that we'd like to study over time, forming the "key"; its starting time (`starttime`) provides the time basis. Whilst creating a *tsibble*, we have to declare the key and index. The data is all about events with irregularly spaced in time, thus specifying `regular = FALSE`.
 
 ```{r create-tsibble, message = FALSE}
 library(tsibble)
@@ -79,9 +80,9 @@ nycbikes_ts <- nycbikes18 %>%
 
 A check with `validate = TRUE` is performed during the construction of a *tsibble* to validate if the key and index determine distinct rows. Duplicates signal a data quality issue, which would likely affect subsequent analyses and hence decision making. Users are encouraged to gaze at data early and reason the process of data cleaning. `duplicates()` helps to find identical key-index entries. Unique key-index pairs ensure a *tsibble* to be a valid input for time series analytics and models.
 
-Some types of operation assume an input in a strict temporal order, such as `lag()`, `lead()` and `difference()`. Hence the ordering of data rows is arranged in the first place by the key and then index from past to recent.
+Some types of operation assume an input in a strict temporal order, such as `lag()`, `lead()` and `difference()`. Therefore the ordering of data rows is arranged in the first place by the key and then index from past to recent.
 
-The print output of a tibble gives a quick glimpse at the data, and the *tsibble*'s print method adds more contextual information. Alongside the data dimension, we are informed by the time interval (`[!]` for irregularity) and index's time zone if it's `POSIXct`; the "key" variables are reported, with the number of units in the data. 900 bikes have been served for `r format(NROW(nycbikes18), big.mark = ",")` trips in 2018. Displaying time zones is useful too, because time zones associated with `POSIXct` are concealed in data frames. Time zone is a critical piece when manipulating time. Especially, the data time zone is neither "UTC" nor my local time zone ("Australia/Melbourne"). When parsing characters to date-times, lubridate functions (such as `ymd_hms()`) default to "UTC" whereas base functions (such as `as.POSIXct()`) sets to local time zone.
+The print output of a tibble (yes, tibble, not tsibble) gives a quick glimpse at the data, and the *tsibble*'s print method adds more contextual information. Alongside the data dimension, we are informed by the time interval (`[!]` for irregularity) and index's time zone if it's `POSIXct`; the "key" variables are reported, with the number of units in the data. 900 bikes have been served for `r format(NROW(nycbikes18), big.mark = ",")` trips in 2018. Displaying time zones is useful too, because time zones associated with `POSIXct` are concealed in data frames. Time zone is a critical piece when manipulating time. Especially, the data time zone is neither "UTC" nor my local time zone ("Australia/Melbourne"). When parsing characters to date-times, lubridate functions (such as `ymd_hms()`) default to "UTC" whereas base functions (such as `as.POSIXct()`) sets to local time zone.
 
 ```{r print}
 nycbikes_ts
@@ -105,7 +106,7 @@ nycbikes_ts %>%
   select(bikeid, tripduration)
 ```
 
-* Modifying the key variable results in an invalid *tsibble*.
+* Modifying the key variable may result in an invalid *tsibble*, thus issuing an error.
 
 ```{r mutate, error = TRUE}
 nycbikes_ts %>% 
@@ -135,7 +136,7 @@ nycbikes_ts %>%
   )
 ```
 
-*Tsibble* knows the index coupled with time zone, and therefore a shorthand `filter_index()` here for conveniently filtering time. Initially I was reluctant to add this feature, but it is too verbose when involving time zone specification. The resulting equivalent saves us a few keystrokes without losing much expressiveness.
+*Tsibble* knows the index coupled with time zone, and thereby a shorthand `filter_index()` is for conveniently filtering time. Initially I was reluctant to add this feature, but it is too verbose when involving time zone specification. The resulting equivalent saves us a few keystrokes without losing much expressiveness.
 
 ```{r filter-index}
 nycbikes_ts %>% 
@@ -149,7 +150,7 @@ nycbikes_ts %>%
   index_by(starthour = floor_date(starttime, unit = "1 hour"))
 ```
 
-In spirit of `group_by()`, `index_by()` takes effect in conjunction with subsequent operations for example `summarise()`. This is how we achieve to compute the number of trips every hour. Have you noticed that the displayed interval switches from irregular `[!]` to one hour `[1h]`?
+In spirit of `group_by()`, `index_by()` takes effect in conjunction with succeeding operations for example `summarise()`. The following snippet is how we achieve in computing the number of trips every hour. Have you noticed that the displayed interval switches from irregular `[!]` to one hour `[1h]`?
 
 ```{r index-by}
 hourly_trips <- nycbikes_ts %>% 
@@ -158,7 +159,7 @@ hourly_trips <- nycbikes_ts %>%
   print()
 ```
 
-There are a handful of functions [handling implicit missing values](https://pkg.earo.me/tsibble/articles/implicit-na.html), all suffixed with `_gaps()`:
+There are a handful of functions for [handling implicit missing values](https://pkg.earo.me/tsibble/articles/implicit-na.html), all suffixed with `_gaps()`:
 
 1. `has_gaps()` checks if there exists implicit missingness.
 2. `scan_gaps()` reports all implicit missing observations.
@@ -182,7 +183,7 @@ full_trips <- hourly_trips %>%
   fill_gaps(ntrips = 0L)
 ```
 
-Hourly tallies for winter and summer months are laid out in the calendar format. The bike usage is primarily driven by commuters in working days. The pattern on July 4th pops out like a weekend due to Independence day in US. No surprise, New Yorkers bike more in summer than winter time.
+Hourly tallies for winter and summer months are laid out in the calendar format using [`sugrrants::facet_calendar()`](https://pkg.earo.me/sugrrants/reference/facet-calendar.html). The bike usage is primarily driven by commuters in working days. The pattern on July 4th pops out like a weekend due to Independence day in US. No surprise, New Yorkers bike more in summer than winter time.
 
 ```{r calendar, fig.height = 8}
 full_trips %>% 
@@ -225,6 +226,8 @@ p1 + p2
 
 ## Ending
 
-A large chunk of **tsibble**'s functions dedicated to performing rolling window operations are left untouched in this post. You may like to read more about rolling window [here](https://pkg.earo.me/tsibble/articles/window.html). I have added parallel support to them in `v0.6.2`, prefixed with `future_` by taking advantage of the awesome **furrr** package.
+A large chunk of **tsibble**'s functions that are dedicated to performing rolling window operations are left untouched in this post. You may like to read more about rolling window [here](https://pkg.earo.me/tsibble/articles/window.html). 
 
-The **tsibble** package forms the infrastructure for new forecasting software, [**fable**](https://github.com/tidyverts/fable). I will speak at rstudio::conf in January, with forecasting *tsibble* (goodbye to `ts`) in action.
+I have added parallel support to them in `v0.6.2`, prefixed with `future_` (like `future_slide()`) by taking advantage of the awesome **furrr** package.
+
+The **tsibble** package forms the infrastructure for new forecasting software, [**fable**](https://github.com/tidyverts/fable). I will be speaking about a streamlined workflow for tidy time series analysis, including forecasting *tsibble* (goodbye to `ts`) at [rstudio::conf](https://www.rstudio.com/conference/) in January.
