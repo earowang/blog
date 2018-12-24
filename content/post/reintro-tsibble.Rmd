@@ -145,7 +145,7 @@ nycbikes_ts %>%
   filter_index(~ "2018-02", "2018-07" ~ "2018-08")
 ```
 
-This event data needs some aggregation to be more informative. It is common to aggregate to less granular time intervals for temporal data. `index_by()` provides a means to prepare grouping for time index by calling an arbitrary function to the index. Lubridate's functions such as `floor_date()`, `celling_date()` and `round_date()` are helpful to do all sorts of sub-daily rounding; `as_date()` and `year()` help transit to daily and annual numbers respectively. `yearweek()`, `yearmonth()` and `yearquarter()` in the **tsibble** cover other time ranges. Here we are interested in hourly tallies using `floor_date()`. As you may notice, the new variable `starthour` is part of groupings, prefixed by `@`.
+This event data needs some aggregation to be more informative. It is common to aggregate to less granular time intervals for temporal data. `index_by()` provides the means to prepare grouping for time index by calling an arbitrary function to the index. Lubridate's functions such as `floor_date()`, `celling_date()` and `round_date()` are helpful to do all sorts of sub-daily rounding; `as_date()` and `year()` help transit to daily and annual numbers respectively. `yearweek()`, `yearmonth()` and `yearquarter()` in the **tsibble** cover other time ranges. Here we are interested in hourly tallies using `floor_date()`. As you may notice, the new variable `starthour` is part of groupings, prefixed by `@`.
 
 ```{r index-by0}
 nycbikes_ts %>% 
