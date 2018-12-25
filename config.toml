@@ -1,47 +1,24 @@
-baseurl = "https://blog.earo.me/"
-title = "epsilon"
-theme = "ghostwriter"
+baseURL = "https://blog.earo.me/"
 languageCode = "en-us"
-copyright = "Earo Wang"
-disqusShortname = "earowang"
-googleAnalytics = "UA-83007123-2"
-ignoreFiles = ["\\.Rmd$", "_files$", "_cache$", "^data$"]
+title = "epsilon"
+theme = "yinwang"
+#pygmentsCodeFences = true
+#pygmentsCodefencesGuessSyntax = false
+#pygmentsStyle = "dracula"
+#pygmentsOptions = ['linenos']
 
-[Author]
-    name = "Earo Wang"
-    profile = "https://earo.me"
-
-[Taxonomies]
-    tag = "tags"
-
-[Params]
-    intro = true
-    headline = "doughnut"
-    description = "random thoughts on odds and ends"
-    github = "https://github.com/earowang"
-    gitlab = ""
-    linkedin = ""
-    gplus = ""
-    twitter = "https://twitter.com/earowang"
-    stackoverflow = ""
-    email = "earo.wang@gmail.com"
-    opengraph = false
-    shareTwitter = false
-    shareFacebook = false
-    shareGooglePlus = false
-    shareLinkedIn = false
-    dateFormat = "Mon, Jan 2, 2006"
-    custom_css = ["css/custom.css"]
-
+[params]
+    author = "Earo Wang"
+    github = "earowang"
+    aboutme = "earo.me"
+    googleAnalytics = "UA-83007123-2"
+    disqusShortname = "earowang"
+    ignoreFiles = ["\\.Rmd$", "_files$", "_cache$", "^data$"]
+    highlight = "github"
+    langs = ["r", "yaml"]
+    # single = false
+    menus = true
+    # backgroundColor = "#fbf6ec"
+    
 [Permalinks]
     post = "/:year/:month/:day/:filename/"
-
-[[menu.main]]
-    name = "Blog"
-    url = "/"
-    weight = 1
-
-[[menu.main]]
-    name = "About"
-    url = "https://earo.me"
-    weight = 2

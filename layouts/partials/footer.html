@@ -1,29 +1,30 @@
-            </div>
-        </div>
+<footer>
+  <hr>
+  <small style="font-size:16px;">
+    &copy; {{ now.Format "2006" }} <a href="https://{{.Site.Params.aboutme}}">{{ .Site.Params.author }}.</a>
+    <!-- Powered by <a href="https://gohugo.io/" target="_blank">Hugo</a> using the <a href="https://github.com/arjunkrishnababu96/basics" target="_blank">Basics</a> theme. -->
+  </small>
+</footer>
+</div> <!-- closes the outer/inner div -->
 
-        <footer class="footer">
-            <div class="container">
-                <div class="site-title-wrapper">
-                    <h1 class="site-title">
-                        <a title="{{ .Site.Title }}" href="{{ .Site.BaseURL }}">{{ .Site.Title }}</a>
-                    </h1>
-                    <a class="button-square button-jump-top js-jump-top" href="#">
-                        <i class="fa fa-angle-up"></i>
-                    </a>
-                </div>
+<!-- load bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+  crossorigin="anonymous"></script>
+<script src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
 
-                <p class="footer-copyright">
-                  <span>&copy; 2012 - {{ .Site.LastChange.Format "2006" }} Earo Wang</span>
-                </p>
-                <p class="footer-copyright">
-                <span>Powered by <a href="https://github.com/rstudio/blogdown">blogdown</a> and <a href="https://github.com/roryg/ghostwriter">ghostwriter theme</a></span>
-                </p>
-            </div>
-        </footer>
+{{ with .Site.Params.googleAnalytics }}
+{{ "<!-- Global site tag (gtag.js) - Google Analytics -->" | safeHTML }}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ . }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
 
-        <script src="{{ .Site.BaseURL }}js/jquery-1.11.3.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
-        <script src="{{ .Site.BaseURL }}js/jquery.fitvids.js"></script>
-        <script src="{{ .Site.BaseURL }}js/scripts.js"></script>
-    </body>
+  gtag('config', '{{ . }}');
+</script>
+{{ end }}
+
+
+</body>
+
 </html>

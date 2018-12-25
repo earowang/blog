@@ -1,13 +1,18 @@
-{{ partial "header.html" . }}
+{{ partial "header" . }}
 
-<div class="container">
-    <article class="post-container">
-        {{ partial "page-header.html" . }}
 
-        {{ partial "page-content.html" . }}
+<div class="inner" style="position:relative;">
+  {{ if eq .Site.Params.single false }}
+  
+  {{ else }}
+  <div class="side-btn"><a href="/" class="back">Home</a></div>
+  {{ end }}
+<div class="blog-post">
+  <h2>{{ .Title }}</h2>
+        {{ .Content }}
+<br />
 
-        {{ partial "post-footer.html" . }}
-    </article>
-</div>
+{{ partial "disqus.html" . }}
+  </div>
 
-{{ partial "footer.html" . }}
+{{ partial "footer" . }}
