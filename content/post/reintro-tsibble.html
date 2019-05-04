@@ -64,7 +64,7 @@ Figure 2: Where do temporal data, tsibble and current time series objects feed i
 library(tidyverse)
 library(lubridate)
 nycbikes_ts &lt;- nycbikes18 %&gt;% 
-  as_tsibble(key = id(bikeid), index = starttime, regular = FALSE)</code></pre>
+  as_tsibble(key = bikeid, index = starttime, regular = FALSE)</code></pre>
 <p>A check with <code>validate = TRUE</code> is performed during the construction of a <em>tsibble</em> to validate if the key and index determine distinct rows. Duplicates signal a data quality issue, which would likely affect subsequent analyses and hence decision making. Users are encouraged to gaze at data early and reason the process of data cleaning. <code>duplicates()</code> helps to find identical key-index entries. Unique key-index pairs ensure a <em>tsibble</em> to be a valid input for time series analytics and models.</p>
 <p>Some types of operation assume an input in a strict temporal order, such as <code>lag()</code>, <code>lead()</code> and <code>difference()</code>. Therefore the ordering of data rows is arranged in the first place by the key and then index from past to recent.</p>
 <p>The print output of a tibble (yes, tibble, not tsibble) gives a quick glimpse at the data, and the <em>tsibble</em>’s print method adds more contextual information. Alongside the data dimension, we are informed by the time interval (<code>[!]</code> for irregularity) and index’s time zone if it’s <code>POSIXct</code>; the “key” variables are reported, with the number of units in the data. 900 bikes have served 333,687 trips in 2018. Displaying time zones is useful too, because time zones associated with <code>POSIXct</code> are concealed in data frames. Time zone is a critical piece when manipulating time. Especially, the data time zone is neither “UTC” nor my local time zone (“Australia/Melbourne”). When parsing characters to date-times, lubridate functions (such as <code>ymd_hms()</code>) default to “UTC” whereas base functions (such as <code>as.POSIXct()</code>) sets to local time zone.</p>
@@ -91,7 +91,7 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 </ul>
 <pre class="r"><code>nycbikes_ts %&gt;% 
   select(-starttime)</code></pre>
-<pre><code>#&gt; Error: Column `starttime` (index) can&#39;t be removed.
+<pre><code>#&gt; Column `starttime` (index) can&#39;t be removed.
 #&gt; Do you need `as_tibble()` to work with data frame?</code></pre>
 <ul>
 <li>Column selection always includes the index. Explicitly selecting the index will suppress the message.</li>
@@ -113,7 +113,7 @@ nycbikes_ts &lt;- nycbikes18 %&gt;%
 </ul>
 <pre class="r"><code>nycbikes_ts %&gt;% 
   mutate(bikeid = 2018L)</code></pre>
-<pre><code>#&gt; Error: The result is not a valid tsibble.
+<pre><code>#&gt; The result is not a valid tsibble.
 #&gt; Do you need `as_tibble()` to work with data frame?</code></pre>
 <ul>
 <li>Summarising a <em>tsibble</em> reduces to a sequence of unique time points instead of a single value.</li>
@@ -258,4 +258,5 @@ p1 + p2</code></pre>
 <p>A large chunk of <strong>tsibble</strong>’s functions that are dedicated to performing rolling window operations are left untouched in this post. You may like to read more about rolling window <a href="https://pkg.earo.me/tsibble/articles/window.html">here</a>.</p>
 <p>I have added parallel support to them in <code>v0.6.2</code>, prefixed with <code>future_</code> (like <code>future_slide()</code>) by taking advantage of the awesome <strong>furrr</strong> package.</p>
 <p>The <strong>tsibble</strong> package forms the infrastructure for new forecasting software, <a href="https://github.com/tidyverts/fable"><strong>fable</strong></a>. I will be speaking about a streamlined workflow for tidy time series analysis, including forecasting <em>tsibble</em> (goodbye to <code>ts</code>) at <a href="https://www.rstudio.com/conference/">rstudio::conf</a> in January.</p>
+<p>(last updated: “2019-05-04”)</p>
 </div>

@@ -18,6 +18,7 @@ tags: ["r", "package", "time series"]
 <div id="coercion" class="section level2">
 <h2>Coercion</h2>
 <pre class="r"><code>library(lubridate)
+library(tidyverse)
 library(tsibble)
 library(tibbletime)
 weather &lt;- nycflights13::weather %&gt;% 
@@ -31,16 +32,16 @@ weather</code></pre>
 #&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
 #&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
 #&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
-#&gt; # ... with 2.611e+04 more rows</code></pre>
+#&gt; # … with 2.611e+04 more rows</code></pre>
 <p>To demonstrate the difference in coercion, we use a subset of <code>weather</code>, that includes weather stations (<code>origin</code>), hourly timestamps (<code>time_hour</code>), temperature and precipitation. It is a tibble (<code>tbl_df</code>). To coerce to a <code>tbl_time</code>, it is sufficient to specify the <code>index</code> in <code>as_tbl_time()</code>.</p>
 <pre class="r"><code># tibbletime
 weather_time &lt;- as_tbl_time(weather, index = time_hour)</code></pre>
-<p>In contrast, <code>tbl_ts</code> from tsibble is a stricter object than <code>tbl_time</code>, because <strong>each observation must be uniquely identified by the index and key.</strong> The “key” provides a way to impose structures, which allows separation of multiple time series in one dataset. In this data example, the identifying variable <code>origin</code> is passed to the <code>key</code> argument via <code>id()</code>. Tsibble requires tidied data without duplicates in the time indices for each key.</p>
+<p>In contrast, <code>tbl_ts</code> from tsibble is a stricter object than <code>tbl_time</code>, because <strong>each observation must be uniquely identified by the index and key.</strong> The “key” provides a way to impose structures, which allows separation of multiple time series in one dataset. In this data example, the identifying variable <code>origin</code> is passed to the <code>key</code> argument. Tsibble requires tidied data without duplicates in the time indices for each key.</p>
 <pre class="r"><code># tsibble
 weather_tsbl &lt;- as_tsibble(weather, index = time_hour)</code></pre>
-<pre><code>#&gt; Error: A valid tsibble must have distinct rows identified by key and index.
-#&gt; Please use `find_duplicates()` to check the duplicated rows.</code></pre>
-<pre class="r"><code>weather_tsbl &lt;- as_tsibble(weather, key = id(origin), index = time_hour)</code></pre>
+<pre><code>#&gt; A valid tsibble must have distinct rows identified by key and index.
+#&gt; Please use `duplicates()` to check the duplicated rows.</code></pre>
+<pre class="r"><code>weather_tsbl &lt;- as_tsibble(weather, key = origin, index = time_hour)</code></pre>
 <p>The <code>tbl_time</code> and <code>tbl_ts</code> objects for the <code>weather</code> data are saved as <code>weather_time</code> and <code>weather_tsbl</code> respectively. The headers in the print results reveal another difference. Under the hood, tsibble automatically computes the time interval of data from the index. It figures out that it’s hourly data (see <code>[1h]</code> in the summary). This will greatly enhance the functionality for time series models and visualisation, since time series frequency is critical in determining what model to estimate, or what plot to create. In addition, tsibble displays the keys and the number of unique keys, instead of the “index” in tibbletime.</p>
 <pre class="r"><code>weather_time</code></pre>
 <pre><code>#&gt; # A time tibble: 26,115 x 4
@@ -52,9 +53,9 @@ weather_tsbl &lt;- as_tsibble(weather, index = time_hour)</code></pre>
 #&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
 #&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
 #&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
-#&gt; # ... with 2.611e+04 more rows</code></pre>
+#&gt; # … with 2.611e+04 more rows</code></pre>
 <pre class="r"><code>weather_tsbl</code></pre>
-<pre><code>#&gt; # A tsibble: 26,115 x 4 [1h]
+<pre><code>#&gt; # A tsibble: 26,115 x 4 [1h] &lt;America/New_York&gt;
 #&gt; # Key:       origin [3]
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
@@ -63,16 +64,16 @@ weather_tsbl &lt;- as_tsibble(weather, index = time_hour)</code></pre>
 #&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
 #&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
 #&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
-#&gt; # ... with 2.611e+04 more rows</code></pre>
+#&gt; # … with 2.611e+04 more rows</code></pre>
 </div>
 <div id="implicit-missing-values" class="section level2">
 <h2>Implicit missing values</h2>
-<p>Temporal data often has missing timestamps. Tsibble provides a function <code>fill_na()</code> to make these missing timestamps explicit, but tibbletime doesn’t currently have similar capabilities.</p>
-<p>For data with regular time intervals, implicit missings can be made explicit using <code>fill_na()</code>. Alternatively, missings can be imputed using a prescribed value. For example, precipitation is likely to be 0, and this is imputed using a name-value pair <code>precip = 0</code>. Simultaneously, a corresponding <code>NA</code> fills the temperature slot. Another subtle change is the increase in the number of rows from filling in the time gaps.</p>
+<p>Temporal data often has missing timestamps. Tsibble provides a function <code>fill_gaps()</code> to make these missing timestamps explicit, but tibbletime doesn’t currently have similar capabilities.</p>
+<p>For data with regular time intervals, implicit missings can be made explicit using <code>fill_gaps()</code>. Alternatively, missings can be imputed using a prescribed value. For example, precipitation is likely to be 0, and this is imputed using a name-value pair <code>precip = 0</code>. Simultaneously, a corresponding <code>NA</code> fills the temperature slot. Another subtle change is the increase in the number of rows from filling in the time gaps.</p>
 <pre class="r"><code>weather_tsbl &lt;- weather_tsbl %&gt;%
-  fill_na(precip = 0)
+  fill_gaps(precip = 0)
 weather_tsbl</code></pre>
-<pre><code>#&gt; # A tsibble: 26,190 x 4 [1h]
+<pre><code>#&gt; # A tsibble: 26,190 x 4 [1h] &lt;America/New_York&gt;
 #&gt; # Key:       origin [3]
 #&gt;   origin time_hour            temp precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;              &lt;dbl&gt;  &lt;dbl&gt;
@@ -81,13 +82,13 @@ weather_tsbl</code></pre>
 #&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
 #&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
 #&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
-#&gt; # ... with 2.618e+04 more rows</code></pre>
+#&gt; # … with 2.618e+04 more rows</code></pre>
 <p>The function <code>fill()</code> from tidyr is used to replace explicit missing values with the previous or next observation. For example, the previous hour’s temperature can be filled in for each weather station.</p>
 <pre class="r"><code>weather_tsbl &lt;- weather_tsbl %&gt;%
   group_by(origin) %&gt;% 
-  tidyr::fill(temp, .direction = &quot;down&quot;)
+  fill(temp, .direction = &quot;down&quot;)
 weather_tsbl</code></pre>
-<pre><code>#&gt; # A tsibble: 26,190 x 4 [1h]
+<pre><code>#&gt; # A tsibble: 26,190 x 4 [1h] &lt;America/New_York&gt;
 #&gt; # Key:       origin [3]
 #&gt; # Groups:    origin [3]
 #&gt;   origin time_hour            temp precip
@@ -97,7 +98,7 @@ weather_tsbl</code></pre>
 #&gt; 3 EWR    2013-01-01 03:00:00  39.0      0
 #&gt; 4 EWR    2013-01-01 04:00:00  39.9      0
 #&gt; 5 EWR    2013-01-01 05:00:00  39.0      0
-#&gt; # ... with 2.618e+04 more rows</code></pre>
+#&gt; # … with 2.618e+04 more rows</code></pre>
 <!-- `na.interp` would use linear interpolation. Is there a fill equivalent? This would give better results in this example. -->
 </div>
 <div id="aggregation-over-calendar-periods" class="section level2">
@@ -115,7 +116,7 @@ weather_time %&gt;%
   )</code></pre>
 <pre><code>#&gt; # A time tibble: 36 x 4
 #&gt; # Index:  time_hour
-#&gt; # Groups: origin [?]
+#&gt; # Groups: origin [3]
 #&gt;   origin time_hour           avg_temp ttl_precip
 #&gt;   &lt;chr&gt;  &lt;dttm&gt;                 &lt;dbl&gt;      &lt;dbl&gt;
 #&gt; 1 EWR    2013-01-31 23:00:00     35.6       3.53
@@ -123,7 +124,7 @@ weather_time %&gt;%
 #&gt; 3 EWR    2013-03-31 23:00:00     40.1       3   
 #&gt; 4 EWR    2013-04-30 23:00:00     53.0       1.47
 #&gt; 5 EWR    2013-05-31 23:00:00     63.3       5.44
-#&gt; # ... with 31 more rows</code></pre>
+#&gt; # … with 31 more rows</code></pre>
 <p>The tsibble approach introduces a time-based grouping function–<code>index-by()</code>. This function takes a name-value pair, which defines how the time index is collapsed to higher-level periods, followed by operations like <code>summarise()</code>. It accepts a range of index functions, such as <code>year()</code> for yearly aggregation, <code>as_date()</code> for daily, and <code>ceiling_date()</code> for other options. How about quarterly? Check out <code>yearquarter()</code>. Zoo’s <code>as.yearmth()</code> and <code>as.yearqtr()</code> also work here!</p>
 <pre class="r"><code># tsibble
 weather_tsbl %&gt;%
@@ -142,7 +143,7 @@ weather_tsbl %&gt;%
 #&gt; 3 EWR      2013 Mar     40.1       3   
 #&gt; 4 EWR      2013 Apr     53.0       1.47
 #&gt; 5 EWR      2013 May     63.3       5.44
-#&gt; # ... with 31 more rows</code></pre>
+#&gt; # … with 31 more rows</code></pre>
 </div>
 <div id="rolling-window-calculations" class="section level2">
 <h2>Rolling window calculations</h2>
@@ -162,12 +163,12 @@ weather_time %&gt;%
 #&gt; 3 EWR    2013-01-01 03:00:00  39.0      0    39.0
 #&gt; 4 EWR    2013-01-01 04:00:00  39.9      0    39.3
 #&gt; 5 EWR    2013-01-01 05:00:00  39.0      0    39.3
-#&gt; # ... with 2.611e+04 more rows</code></pre>
+#&gt; # … with 2.611e+04 more rows</code></pre>
 <pre class="r"><code># tsibble
 weather_tsbl %&gt;% 
   group_by(origin) %&gt;% 
   mutate(temp_ma = slide_dbl(temp, ~ mean(., na.rm = TRUE), .size = 3))</code></pre>
-<pre><code>#&gt; # A tsibble: 26,190 x 5 [1h]
+<pre><code>#&gt; # A tsibble: 26,190 x 5 [1h] &lt;America/New_York&gt;
 #&gt; # Key:       origin [3]
 #&gt; # Groups:    origin [3]
 #&gt;   origin time_hour            temp precip temp_ma
@@ -177,7 +178,7 @@ weather_tsbl %&gt;%
 #&gt; 3 EWR    2013-01-01 03:00:00  39.0      0    39.0
 #&gt; 4 EWR    2013-01-01 04:00:00  39.9      0    39.3
 #&gt; 5 EWR    2013-01-01 05:00:00  39.0      0    39.3
-#&gt; # ... with 2.618e+04 more rows</code></pre>
+#&gt; # … with 2.618e+04 more rows</code></pre>
 </div>
 <div id="filtering-time" class="section level2">
 <h2>Filtering time</h2>
@@ -196,14 +197,14 @@ weather_time %&gt;%
 #&gt; 3 EWR    2013-06-01 02:00:00  75.9      0
 #&gt; 4 EWR    2013-06-01 03:00:00  73.9      0
 #&gt; 5 EWR    2013-06-01 04:00:00  73.0      0
-#&gt; # ... with 4,383 more rows</code></pre>
+#&gt; # … with 4,383 more rows</code></pre>
 <pre class="r"><code># tsibble
 weather_tsbl %&gt;% 
   filter(
     time_hour &gt;= ymd_h(&quot;2013-06-01 00&quot;, tz = &quot;America/New_York&quot;), 
     time_hour &lt;= ymd_h(&quot;2013-07-31 23&quot;, tz = &quot;America/New_York&quot;)
   )</code></pre>
-<pre><code>#&gt; # A tsibble: 4,392 x 4 [1h]
+<pre><code>#&gt; # A tsibble: 4,392 x 4 [1h] &lt;America/New_York&gt;
 #&gt; # Key:       origin [3]
 #&gt; # Groups:    origin [3]
 #&gt;   origin time_hour            temp precip
@@ -213,10 +214,11 @@ weather_tsbl %&gt;%
 #&gt; 3 EWR    2013-06-01 02:00:00  75.9      0
 #&gt; 4 EWR    2013-06-01 03:00:00  73.9      0
 #&gt; 5 EWR    2013-06-01 04:00:00  73.0      0
-#&gt; # ... with 4,387 more rows</code></pre>
+#&gt; # … with 4,387 more rows</code></pre>
 </div>
 <div id="wrap-up" class="section level2">
 <h2>Wrap-up</h2>
 <p>Generally, tsibble defines a time series tibble more strictly than tibbletime. The former includes not only a time index but “key” variables. The value of these will become more apparent when we develop visualisation and forecasting methods designed to work with tsibble. Moreover, the function APIs between the two packages are quite different. I would suggest to give both packages a try and choose the one that best suits your need.</p>
 <p>The purpose of this blog post is to tease apart the similarities and differences between the two packages. Both will continue to develop independently, at least for a while — it’s not a competition because each developer has different purposes right now. For me, this is part of my thesis research, and I’m trying to understand the key components that we need, to make it easier to go back and forth with modeling and exploration of different types of temporal data. I’ve recently been exposed to the tidyverse and exploratory data analysis. I am still burrowing down the rabbit hole of this intellectual exercise, and know there is more to think about yet. Eventually the best of both may converge into one form.</p>
+<p>(last updated: “2019-05-04”)</p>
 </div>

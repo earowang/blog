@@ -26,6 +26,7 @@ Beyond this, the packages deviate. I'll walk through those differences using the
 
 ```{r load, message = FALSE}
 library(lubridate)
+library(tidyverse)
 library(tsibble)
 library(tibbletime)
 weather <- nycflights13::weather %>% 
@@ -40,12 +41,12 @@ To demonstrate the difference in coercion, we use a subset of `weather`, that in
 weather_time <- as_tbl_time(weather, index = time_hour)
 ```
 
-In contrast, `tbl_ts` from tsibble is a stricter object than `tbl_time`, because **each observation must be uniquely identified by the index and key.** The "key" provides a way to impose structures, which allows separation of multiple time series in one dataset. In this data example, the identifying variable `origin` is passed to the `key` argument via `id()`. Tsibble requires tidied data without duplicates in the time indices for each key.
+In contrast, `tbl_ts` from tsibble is a stricter object than `tbl_time`, because **each observation must be uniquely identified by the index and key.** The "key" provides a way to impose structures, which allows separation of multiple time series in one dataset. In this data example, the identifying variable `origin` is passed to the `key` argument. Tsibble requires tidied data without duplicates in the time indices for each key.
 
 ```{r tsibble, error = TRUE}
 # tsibble
 weather_tsbl <- as_tsibble(weather, index = time_hour)
-weather_tsbl <- as_tsibble(weather, key = id(origin), index = time_hour)
+weather_tsbl <- as_tsibble(weather, key = origin, index = time_hour)
 ```
 
 The `tbl_time` and `tbl_ts` objects for the `weather` data are saved as `weather_time` and `weather_tsbl` respectively. The headers in the print results reveal another difference. Under the hood, tsibble automatically computes the time interval of data from the index. It figures out that it's hourly data (see `[1h]` in the summary). This will greatly enhance the functionality for time series models and visualisation, since time series frequency is critical in determining what model to estimate, or what plot to create. In addition, tsibble displays the keys and the number of unique keys, instead of the "index" in tibbletime.
@@ -57,13 +58,13 @@ weather_tsbl
 
 ## Implicit missing values
 
-Temporal data often has missing timestamps. Tsibble provides a function `fill_na()` to make these missing timestamps explicit, but tibbletime doesn't currently have similar capabilities. 
+Temporal data often has missing timestamps. Tsibble provides a function `fill_gaps()` to make these missing timestamps explicit, but tibbletime doesn't currently have similar capabilities. 
 
-For data with regular time intervals, implicit missings can be made explicit using `fill_na()`. Alternatively, missings can be imputed using a prescribed value. For example, precipitation is likely to be 0, and this is imputed using a name-value pair `precip = 0`. Simultaneously, a corresponding `NA` fills the temperature slot. Another subtle change is the increase in the number of rows from filling in the time gaps.
+For data with regular time intervals, implicit missings can be made explicit using `fill_gaps()`. Alternatively, missings can be imputed using a prescribed value. For example, precipitation is likely to be 0, and this is imputed using a name-value pair `precip = 0`. Simultaneously, a corresponding `NA` fills the temperature slot. Another subtle change is the increase in the number of rows from filling in the time gaps.
 
 ```{r fill-na}
 weather_tsbl <- weather_tsbl %>%
-  fill_na(precip = 0)
+  fill_gaps(precip = 0)
 weather_tsbl
 ```
 
@@ -72,7 +73,7 @@ The function `fill()` from tidyr is used to replace explicit missing values with
 ```{r fill}
 weather_tsbl <- weather_tsbl %>%
   group_by(origin) %>% 
-  tidyr::fill(temp, .direction = "down")
+  fill(temp, .direction = "down")
 weather_tsbl
 ```
 
@@ -148,3 +149,5 @@ weather_tsbl %>%
 Generally, tsibble defines a time series tibble more strictly than tibbletime. The former includes not only a time index but "key" variables. The value of these will become more apparent when we develop visualisation and forecasting methods designed to work with tsibble. Moreover, the function APIs between the two packages are quite different. I would suggest to give both packages a try and choose the one that best suits your need.
 
 The purpose of this blog post is to tease apart the similarities and differences between the two packages. Both will continue to develop independently, at least for a while --- it's not a competition because each developer has different purposes right now. For me, this is part of my thesis research, and I'm trying to understand the key components that we need, to make it easier to go back and forth with modeling and exploration of different types of temporal data. I've recently been exposed to the tidyverse and exploratory data analysis. I am still burrowing down the rabbit hole of this intellectual exercise, and know there is more to think about yet. Eventually the best of both may converge into one form.
+
+(last updated: "2019-05-04")

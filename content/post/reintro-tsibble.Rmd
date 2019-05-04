@@ -77,7 +77,7 @@ library(tsibble)
 library(tidyverse)
 library(lubridate)
 nycbikes_ts <- nycbikes18 %>% 
-  as_tsibble(key = id(bikeid), index = starttime, regular = FALSE)
+  as_tsibble(key = bikeid, index = starttime, regular = FALSE)
 ```
 
 A check with `validate = TRUE` is performed during the construction of a *tsibble* to validate if the key and index determine distinct rows. Duplicates signal a data quality issue, which would likely affect subsequent analyses and hence decision making. Users are encouraged to gaze at data early and reason the process of data cleaning. `duplicates()` helps to find identical key-index entries. Unique key-index pairs ensure a *tsibble* to be a valid input for time series analytics and models.
@@ -233,3 +233,5 @@ A large chunk of **tsibble**'s functions that are dedicated to performing rollin
 I have added parallel support to them in `v0.6.2`, prefixed with `future_` (like `future_slide()`) by taking advantage of the awesome **furrr** package.
 
 The **tsibble** package forms the infrastructure for new forecasting software, [**fable**](https://github.com/tidyverts/fable). I will be speaking about a streamlined workflow for tidy time series analysis, including forecasting *tsibble* (goodbye to `ts`) at [rstudio::conf](https://www.rstudio.com/conference/) in January.
+
+(last updated: "2019-05-04")
