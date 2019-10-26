@@ -1,0 +1,34 @@
+---
+title: "Reducing frictions in writing with R Markdown for html and pdf"
+description: "A comprehensive description of tsibble, with a case study of NYC Citi Bike"
+date: "2019-10-26"
+output: blogdown::html_page
+tags: ["r", "rmarkdown"]
+---
+
+
+
+<p>I write my thesis in <a href="https://bookdown.org/yihui/rmarkdown/">R Markdown</a>, with <a href="https://bookdown.org/yihui/bookdown/">bookdown</a>. Each chapter is a standalone paper, with the pdf output in mind initially. When I assembled them together for the thesis, I hoped <code>bookdown::gitbook</code> should just work. In contrast to the nice pdf, the compiling for html complained bitterly: images not shown, <code>??</code> in cross-references, and etc. While fixing bits and pieces, I’ve learned several tips to lubricate this process.</p>
+<div id="automatic-switch-between-png-and-pdf-for-external-figures-with-knitr.graphics.auto_pdf-true" class="section level2">
+<h2>Automatic switch between png and pdf for external figures with <code>knitr.graphics.auto_pdf = TRUE</code></h2>
+<p>We let <strong>knitr</strong> to take care of the plotting device for R figures: pdf for latex and png for html, by default. However, we often rely on external figures to demonstrate conceptual models. We end up exporting a set of images with identical names but different extensions, <code>ext-fig.pdf</code> and <code>ext-fig.png</code>, in order to maintain high-quality images for pdf and html. To insert images, we use <code>![]()</code>, that inevitably lends itself to an <code>if-else</code> statement. No doubt <a href="http://yihui.name">Yihui</a> has already provided an optimal solution to keep away from the sub-optimal <code>if-else</code>. It turns out <code>knitr::include_graphics(&quot;ext-fig.png&quot;, auto_pdf = TRUE)</code> does the trick to automatically switch between png and pdf. If you don’t want to specify <code>auto_pdf = TRUE</code> every time, turn on the option <code>options(&quot;knitr.graphics.auto_pdf&quot; = TRUE)</code> up front.</p>
+<p>Using <code>include_graphics()</code> in a knitr chunk allows us to adjust image width/height, add captions, arrange side-by-side figures. The option <code>out.width = &quot;80%&quot;</code> remains as is for html and is translated to <code>out.width = &quot;0.8\\linewidth&quot;</code> for latex.</p>
+<pre><code>```{r ext-graphics, fig.cap = &quot;(ref:ext-graphics-cap)&quot;, out.width = &quot;80%&quot;}
+knitr::include_graphics(&quot;ext-fig.png&quot;, auto_pdf = TRUE)
+```
+
+(ref:ext-graphics-cap) I prefer the figure caption outside the chunk.
+(1) Special symbols, like `\@ref()`, don&#39;t need escaping. We have to do `fig.cap = \\@ref()` in a chunk.
+(2) The chunk won&#39;t be re-evaluated, if we modify the caption.</code></pre>
+</div>
+<div id="output-conditional-on-formats-with-knitris_htmllatex_output" class="section level2">
+<h2>Output conditional on formats with <code>knitr::is_[html/latex]_output</code></h2>
+<p>We know <strong>knitr</strong> is a powerhouse that processes our chunks and documents in the background. As an R package, it also comes with many handy functions (hidden gems), such as <code>include_[app/url/graphics]</code>. The pair of <code>is_[html/latex]_output</code> are useful for producing contextual results due to different media. For example, the online welcome page for <a href="https://r4ds.had.co.nz">R for Data Science</a> starts with “This is the website”. This page, however, doesn’t occur in the printed version, because “This is not a website”.</p>
+<p>To handle this kind of disparity, we can apply the following trick. Inline R expressions put the html comment <code>&lt;!-- --&gt;</code> around the text if the output format is html. The text only shows up in pdf.</p>
+<p><img src="/img/inline-r-html.png" /></p>
+<p>Coupled with the <code>eval</code> option, <code>is_[html/latex]_output</code> gives the control over whether to evaluate the chunk depending on the output formats.</p>
+</div>
+<div id="cross-reference-with-ref-instead-of-ref" class="section level2">
+<h2>Cross-reference with <code>\@ref()</code> instead of <code>\ref{}</code></h2>
+<p>Scientific writing cannot avoid mentioning figures, tables, and equations. I already got used to typing <code>*italic*</code> over <code>\textit{italic}</code> and <code>**bold**</code> over <code>\textbf{bold}</code>. But when outputting html, the Rmd cross-reference system has bitten me a bit. Referring to figures and tables with <code>\ref{}</code> compiles with no problems for pdf, and it is naturally embedded into the muscle memory as a latex user. I was confronted with the initial surprise that it is not recognisable when switching to the html output. The recommended syntax for cross-references is <code>\@ref()</code> in Rmd, which both latex and html embrace with delights.</p>
+</div>
