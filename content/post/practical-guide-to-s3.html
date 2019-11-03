@@ -1,0 +1,244 @@
+---
+title: "A practical guide to vctrs-powered S3 programming"
+date: "2019-11-03"
+output:
+  blogdown::html_page:
+    toc: true
+tags: ["r", "S3"]
+---
+
+
+<div id="TOC">
+<ul>
+<li><a href="#constructing-a-vector-of-turtles">Constructing a vector of turtles</a></li>
+<li><a href="#creating-a-user-interface">Creating a user interface</a></li>
+<li><a href="#defining-turtles-travelling-verbs">Defining turtle’s travelling verbs</a></li>
+<li><a href="#subclassing-for-pen-holding-turtles">Subclassing for pen-holding turtles</a></li>
+<li><a href="#ending">Ending</a></li>
+</ul>
+</div>
+
+<p>This post is inspired by <a href="https://stuartlee.org/post/content/post/2019-07-09-s4-a-short-guide-for-perplexed/">Stuart Lee’s guide on S4</a>, where <a href="https://en.wikipedia.org/wiki/Turtle_graphics">the fun turtle example</a> is used to demonstrate why S4 and the design principles in R. Now, this turtle seeks to migrate to the S3 playground. We will help this turtle to settle in S3, and even form a turtle team to travel simultaneously.</p>
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/3/3d/Turtle-animation.gif" /></p>
+<p>This guide focuses on the practical knowledge about S3, featuring the <a href="http://vctrs.r-lib.org"><strong>vctrs</strong></a> package–a modern take on S3.</p>
+<pre class="r"><code>library(vctrs)</code></pre>
+<div id="constructing-a-vector-of-turtles" class="section level2">
+<h2>Constructing a vector of turtles</h2>
+<p>The animated turtle can be decomposed into three components: current coordinates, orientations, and historical paths. These are the key data to represent the turtle on the move. The description probably doesn’t sound like a simple vector, but a list of elements. This is a so-called <a href="https://vctrs.r-lib.org/articles/s3-vector.html#record-style-objects">record-type vector</a> that contains a named list of equal-sized vectors. It’s not a commonly used vector type in base R, and the typical example is <code>POSIXlt</code>. The record-style object can behave exactly like as a vector by concealing the <code>data.frame</code>-like underpinning.</p>
+<p>We first provide a low-level constructor <code>new_turtle()</code> that declares the data fields and the desired types required for the object, and the class name, using <code>vctrs::new_rcrd()</code>. The type check is performed in the constructor to overcome the issue of no formal class definitions in S3.</p>
+<pre class="r"><code>new_turtle &lt;- function(x = double(), y = double(), orientation = double(),
+                       path = list()) {
+  vec_assert(x, double())
+  vec_assert(y, double())
+  vec_assert(orientation, double())
+  stopifnot(is.list(path))
+  
+  new_rcrd(list(
+    &quot;x&quot; = x, &quot;y&quot; = y,
+    &quot;orientation&quot; = orientation, 
+    &quot;path&quot; = path
+  ), class = &quot;turtle&quot;)
+}
+new_turtle()</code></pre>
+<pre><code>#&gt; &lt;turtle[0]&gt;</code></pre>
+<p>We’ve got a prototype of <code>turtle</code> working by calling <code>new_turtle()</code>, an empty container with no turtles. When we supply arguments into <code>new_turtle()</code>, oops, this turtle refuses to hang out, because we forget to put cosmetics on them.</p>
+<pre class="r"><code>new_turtle(x = 0, y = 0, orientation = 0, path = list(data.frame(x = 0, y = 0)))</code></pre>
+<pre><code>#&gt; &lt;turtle[1]&gt;</code></pre>
+<pre><code>#&gt; Error: `format.turtle()` not implemented.</code></pre>
+<p>As the error suggests, a <code>format()</code> method is needed. This is the first method defined for the <code>turtle</code> class. It should return strings that succinctly describe the object, for example where to locate the <code>turtle</code>. To display turtles (unicode) nicely on the screen, <code>vctrs::obj_print_data()</code> is also defined. The <code>turtle</code> stops complaining and shows up.</p>
+<pre class="r"><code>format.turtle &lt;- function(x, ...) {
+  info &lt;- sprintf(&quot;\U1F422 located at (%1.0f, %1.0f); facing %s degrees&quot;,
+    field(x, &quot;x&quot;), field(x, &quot;y&quot;), field(x, &quot;orientation&quot;))
+  paste(info, sep = &quot;\n&quot;)
+}
+
+obj_print_data.turtle &lt;- function(x) {
+  cat(format(x), sep = &quot;\n&quot;)
+}
+
+new_turtle(x = 0, y = 0, orientation = 0, path = list(data.frame(x = 0, y = 0)))</code></pre>
+<pre><code>#&gt; &lt;turtle[1]&gt;
+#&gt; 🐢 located at (0, 0); facing 0 degrees</code></pre>
+</div>
+<div id="creating-a-user-interface" class="section level2">
+<h2>Creating a user interface</h2>
+<p>The constructor <code>new_turtle()</code> is rather strict. A user-friendly interface needs exposing to easily create the <code>turtle</code> object.</p>
+<ol style="list-style-type: decimal">
+<li>It’s unnecessary for users to input <code>path</code>. We remove the <code>path</code> option to simplify the interface. We’ll have methods available for users to manipulate <code>turtle</code>.</li>
+<li>We check the range of <code>orientation</code>. If the input is not valid, it should return an informative error.</li>
+<li>We coerce inputs to doubles in case of integer inputs.</li>
+</ol>
+<pre class="r"><code>validate_turtle &lt;- function(orientation) {
+  if (orientation &gt; 360 || orientation &lt; -360) {
+    stop(&quot;`orientation` should fall into the range between -360 and 360.&quot;,
+      call. = FALSE)
+  }
+}
+
+turtle &lt;- function(x = 0, y = 0, orientation = 0) {
+  validate_turtle(orientation)
+  x &lt;- as.double(x)
+  y &lt;- as.double(y)
+  orientation &lt;- as.double(orientation)
+  new_turtle(
+    x = x, y = y, 
+    orientation = orientation, 
+    path = vec_split(data.frame(x = x, y = y), by = vec_seq_along(x))[[&quot;val&quot;]])
+}</code></pre>
+<p>We’re done with crafting a user-facing function. We now check if we can operate the <code>turtle</code> in a way that we usually work with other vectors, such as concatenating <code>c()</code> and subsetting <code>[</code>, with no methods defined currently. Everything works like a charm. A tibble can hold the <code>turtle</code> vector, ready for data analysis. It also aborts immediately with clear message when we subset out of the range and assign non-<code>turtle</code> to <code>turtle</code>.</p>
+<pre class="r"><code>x &lt;- rep(turtle(), 3)
+unique(x)</code></pre>
+<pre><code>#&gt; &lt;turtle[1]&gt;
+#&gt; 🐢 located at (0, 0); facing 0 degrees</code></pre>
+<pre class="r"><code>x[2:3]</code></pre>
+<pre><code>#&gt; &lt;turtle[2]&gt;
+#&gt; 🐢 located at (0, 0); facing 0 degrees
+#&gt; 🐢 located at (0, 0); facing 0 degrees</code></pre>
+<pre class="r"><code>x[4]</code></pre>
+<pre><code>#&gt; Error: Must index existing elements.
+#&gt; [31m✖[39m Can&#39;t subset position 4.
+#&gt; [34mℹ[39m There are only 3 elements.</code></pre>
+<pre class="r"><code>x[1] &lt;- 42</code></pre>
+<pre><code>#&gt; Error: Can&#39;t cast &lt;double&gt; to &lt;turtle&gt;.</code></pre>
+<pre class="r"><code>tibble::tibble(
+  tutles = turtle(x = 1:3, y = rep(0, 3), orientation = seq(60, 180, 60))
+)</code></pre>
+<pre><code>#&gt; # A tibble: 3 x 1
+#&gt;                                     tutles
+#&gt;                                   &lt;turtle&gt;
+#&gt; 1  🐢 located at (1, 0); facing 60 degrees
+#&gt; 2 🐢 located at (2, 0); facing 120 degrees
+#&gt; 3 🐢 located at (3, 0); facing 180 degrees</code></pre>
+<p>In the old days, it’s a pain to make sure a new record-type vector works properly. Many methods have to be defined for the class, to name a few: <code>c()</code>, <code>length()</code>, <code>rep()</code>, <code>unique()</code> and <code>as.data.frame()</code>. We can use <code>sloop::s3_methods_class()</code> to find all methods attached to <code>POSIXlt</code>, 34 in total.</p>
+<pre class="r"><code>sloop::s3_methods_class(&quot;POSIXlt&quot;)</code></pre>
+<pre><code>#&gt; # A tibble: 34 x 4
+#&gt;   generic class   visible source
+#&gt;   &lt;chr&gt;   &lt;chr&gt;   &lt;lgl&gt;   &lt;chr&gt; 
+#&gt; 1 [       POSIXlt TRUE    base  
+#&gt; 2 [[      POSIXlt TRUE    base  
+#&gt; 3 [[&lt;-    POSIXlt TRUE    base  
+#&gt; 4 [&lt;-     POSIXlt TRUE    base  
+#&gt; # … with 30 more rows</code></pre>
+<p>With <strong>vctrs</strong>, we can focus more on the class design itself and concerns less about the base operations. What’s behind the scene is that <code>turtle</code> is a subclassing of <code>vctrs_rcrd</code> and <code>vctrs_vctr</code>. When <code>rep()</code> is called on the <code>turtle</code> object, it looks for the first available <code>rep()</code> method in the class hierarchy, which is <code>rep.vctrs_rcrd()</code> indicated by <code>=&gt;</code>, since it skips the undefined <code>rep.turtle()</code> (without <code>*</code>). The <code>sloop::s3_dispatch()</code> trace the search path down.</p>
+<pre class="r"><code>class(x)</code></pre>
+<pre><code>#&gt; [1] &quot;turtle&quot;     &quot;vctrs_rcrd&quot; &quot;vctrs_vctr&quot;</code></pre>
+<pre class="r"><code>sloop::s3_dispatch(rep(turtle(), 3))</code></pre>
+<pre><code>#&gt;    rep.turtle
+#&gt; =&gt; rep.vctrs_rcrd
+#&gt;  * rep.vctrs_vctr
+#&gt;    rep.default
+#&gt;  * rep (internal)</code></pre>
+</div>
+<div id="defining-turtles-travelling-verbs" class="section level2">
+<h2>Defining turtle’s travelling verbs</h2>
+<p>So far turtles are stationary. We’d like to move them around, for example to <code>forward()</code> and <code>turn()</code> turtles. We can write these verbs as simple functions, but here we’re going to create generics for them, since we will have a subclass of <code>turtle</code> later. The <code>UseMethod()</code> allows us to declare the S3 generic and dispatch on the first argument <code>x</code>. The second argument <code>...</code> gives the methods freedom to take extra arguments, like <code>steps</code> and <code>angle</code>. However, <code>...</code> in the <code>forward.turtle()</code> method is ignored, because we don’t capture and use them inside the function. We include <code>...</code> in our methods, for the sake of consistence with the generics.</p>
+<pre class="r"><code>forward &lt;- function(x, ...) {
+  UseMethod(&quot;forward&quot;)
+}
+
+turn &lt;- function(x, ...) {
+  UseMethod(&quot;turn&quot;)
+}
+
+forward.turtle &lt;- function(x, steps = 1, ...) {
+  path &lt;- field(x, &quot;path&quot;)
+  angle &lt;- field(x, &quot;orientation&quot;) * pi / 180
+  x_dir &lt;- steps * cos(angle)
+  y_dir &lt;- steps * sin(angle)
+  new_x &lt;- field(x, &quot;x&quot;) + x_dir
+  new_y &lt;- field(x, &quot;y&quot;) + y_dir
+  new_path &lt;- lapply(vec_seq_along(x), 
+    function(i) vec_rbind(path[[i]], data.frame(x = new_x[i], y = new_y[i])))
+  
+  field(x, &quot;x&quot;) &lt;- new_x
+  field(x, &quot;y&quot;) &lt;- new_y
+  field(x, &quot;path&quot;) &lt;- new_path
+  x
+}
+
+turn.turtle &lt;- function(x, angle = 0, ...) {
+  field(x, &quot;orientation&quot;) &lt;- field(x, &quot;orientation&quot;) + angle
+  x
+}</code></pre>
+<p>We try out if our turtles are able to move in the direction as instructed. The <code>forward()</code> and <code>turn()</code> methods have been vectorised to have many turtles travel at the same time. Two turtles start at origins and stop at different places.</p>
+<pre class="r"><code>library(magrittr)
+two_turtles &lt;- c(turtle(), turtle()) %&gt;% 
+  turn(angle = c(60, 0)) %&gt;% 
+  forward(steps = 3)
+two_turtles</code></pre>
+<pre><code>#&gt; &lt;turtle[2]&gt;
+#&gt; 🐢 located at (2, 3); facing 60 degrees
+#&gt; 🐢 located at (3, 0); facing 0 degrees</code></pre>
+<p>We own the generics and define their methods for the <code>turtle</code> class. What happens if we apply <code>forward()</code> to other classes? Is the error message familiar to you? 😝 Because we haven’t write the <code>forward()</code> method for <code>Date</code> yet, and will not.</p>
+<pre class="r"><code>forward(Sys.Date())</code></pre>
+<pre><code>#&gt; Error in UseMethod(&quot;forward&quot;): no applicable method for &#39;forward&#39; applied to an object of class &quot;Date&quot;</code></pre>
+<p>Instead we will make the message more readable by defining <code>forward.default()</code>. If <code>forward()</code> cannot find the method available for the class, <code>forward.default()</code> will eventually be called.</p>
+<pre class="r"><code>forward.default &lt;- function(x, ...) {
+  cls &lt;- class(x)[1]
+  err &lt;- sprintf(&quot;`forward()` doesn&#39;t know how to handle class `%s` yet&quot;, cls) 
+  stop(err, call. = FALSE)
+}
+forward(Sys.Date())</code></pre>
+<pre><code>#&gt; Error: `forward()` doesn&#39;t know how to handle class `Date` yet</code></pre>
+</div>
+<div id="subclassing-for-pen-holding-turtles" class="section level2">
+<h2>Subclassing for pen-holding turtles</h2>
+<p>We want our turtles to hold a pen, so that they can draw the path as they travel. Rather than creating a brand new class, we’ll subclass our <code>turtle</code> class in order to reuse what we created (make life easier). We specify the class as a character vector in a specific-to-general order: <code>turtle_with_pen</code> and then <code>turtle</code>. They share the same underlying data, but <code>turtle_with_pen</code> holds some metadata (or attributes) that describe how the path to be drawn in terms of colour and thickness.</p>
+<pre class="r"><code>turtle_with_pen &lt;- function(x = turtle(), colour = &quot;steelblue&quot;, thickness = 1,
+                            on = FALSE) {
+  new_rcrd(vec_data(x),
+    &quot;colour&quot; = colour, &quot;thickness&quot; = thickness, &quot;on&quot; = on, 
+    class = c(&quot;turtle_with_pen&quot;, &quot;turtle&quot;))
+}
+turtle_with_pen(x)</code></pre>
+<pre><code>#&gt; &lt;turtle_with_pen[3]&gt;
+#&gt; 🐢 located at (0, 0); facing 0 degrees
+#&gt; 🐢 located at (0, 0); facing 0 degrees
+#&gt; 🐢 located at (0, 0); facing 0 degrees</code></pre>
+<p>When we <code>print()</code> our pen-holding turtles, we are no longer satisfied with stationary turtles 🐢. We are interested in showing animated turtles instead. This can be done by associating <code>print()</code> method to <code>turtle_with_pen</code>.</p>
+<pre class="r"><code>print.turtle_with_pen &lt;- function(x, ...) {
+  if (attr(x, &quot;on&quot;)) {
+    path &lt;- field(x, &quot;path&quot;)
+    path_tbl &lt;- vec_rbind(
+      !!!lapply(vec_seq_along(x), function(i) vec_cbind(
+        !!!path[[i]],
+        move = seq_len(vec_size(path[[i]])),
+        id = vec_repeat(i, times = vec_size(path[[i]])))))
+    plot &lt;- ggplot2::ggplot(data = path_tbl) + 
+      ggplot2::geom_path(ggplot2::aes(x, y), colour = attr(x, &quot;colour&quot;), 
+        size = attr(x, &quot;thickness&quot;)) +
+      ggplot2::facet_wrap(~ id) +
+      ggplot2::coord_fixed() +
+      ggplot2::theme_void() + 
+      gganimate::transition_reveal(move)
+    print(plot)
+  } else {
+    NextMethod()
+  }
+}
+turtle_with_pen(x)</code></pre>
+<pre><code>#&gt; &lt;turtle_with_pen[3]&gt;
+#&gt; 🐢 located at (0, 0); facing 0 degrees
+#&gt; 🐢 located at (0, 0); facing 0 degrees
+#&gt; 🐢 located at (0, 0); facing 0 degrees</code></pre>
+<p>It looks like stationary turtles are being displayed again. The reason is that the default <code>on = FALSE</code> directs to calling <code>NextMethod()</code>, which essentially calls <code>print.turtle()</code>. We should have switched them <code>on</code> in the first place. Our pen-holding turtles inherit <code>forward()</code> and <code>turn()</code> behaviours from <code>turtle</code>, and conduct a hexagonal walk.</p>
+<pre class="r"><code>turtle_with_pen(x, colour = &quot;#006d2c&quot;, on = TRUE) %&gt;% 
+  turn(angle = 90) %&gt;% 
+  forward(steps = 3) %&gt;%
+  turn(angle = -60) %&gt;% 
+  forward(steps = 3) %&gt;% 
+  turn(angle = -60) %&gt;% 
+  forward(steps = 3) %&gt;%
+  turn(angle = -60) %&gt;% 
+  forward(steps = 3) %&gt;%
+  turn(angle = -60) %&gt;% 
+  forward(steps = 3) %&gt;%
+  turn(angle = -60) %&gt;% 
+  forward(steps = 3) %&gt;%
+  turn(angle = -60)</code></pre>
+<p><img src="/img/animated-turtles.gif" /></p>
+</div>
+<div id="ending" class="section level2">
+<h2>Ending</h2>
+<p>This post shows the S3 approach to the turtle graphics. For more structured reading on S3, Hadley’s <a href="https://adv-r.hadley.nz/s3.html">Advanced R</a> is highly recommended.</p>
+</div>
