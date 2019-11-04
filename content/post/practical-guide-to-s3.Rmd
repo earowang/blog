@@ -185,7 +185,7 @@ forward(Sys.Date())
 
 ## Subclassing for pen-holding turtles
 
-We want our turtles to hold a pen, so that they can draw the path as they travel. Rather than creating a brand new class, we'll subclass our `turtle` class in order to reuse what we created and make life easier. It's worth revisiting the `new_turtle()` constructor to allow for subclassing. Two new arguments `...` and `class` are introduced in the parent constructor `new_turtle()`. Class-specific attributes will be passed to the new class via `...`. Note that the `class` should be specified as a character vector in a *specific-to-general* order, that is `turtle_with_pen` (specific) and `turtle` (general).
+We want our turtles to hold a pen, so that they can draw the path as they travel. Rather than creating a brand new class, we'll subclass our `turtle` class in order to reuse what we created and reduce user's cognitive loads. It's worth revisiting the `new_turtle()` constructor to allow for subclassing. Two new arguments `...` and `class` are introduced in the parent constructor `new_turtle()`. Class-specific attributes will be passed to the new class via `...`. Note that the `class` should be specified as a character vector in a *specific-to-general* order, that is `turtle_with_pen` (specific) and `turtle` (general).
 
 ```{r}
 new_turtle <- function(x = double(), y = double(), orientation = double(),
