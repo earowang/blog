@@ -45,7 +45,7 @@ new_turtle <- function(x = double(), y = double(), orientation = double(),
 new_turtle()
 ```
 
-We've got a prototype of `turtle` working by calling `new_turtle()`, an empty container with no turtles. When we supply arguments into `new_turtle()`, oops, this turtle refuses to hang out, because we forget to put cosmetics on them.  
+We've got a *prototype* of `turtle` working by calling `new_turtle()`, an empty container with no turtles. When we supply arguments into `new_turtle()`, oops, this turtle refuses to hang out, because we forget to put cosmetics on them.  
 
 ```{r error = TRUE}
 new_turtle(x = 0, y = 0, orientation = 0, path = list(data.frame(x = 0, y = 0)))
@@ -123,7 +123,7 @@ sloop::s3_dispatch(rep(turtle(), 3))
 
 ## Defining turtle's travelling verbs
 
-So far turtles are stationary. We'd like to move them around, for example to `forward()` and `turn()` turtles. We can write these verbs as simple functions, but here we're going to create generics for them, since we will have a subclass of `turtle` later. The `UseMethod()` allows us to declare the S3 generic and dispatch on the first argument `x`. The second argument `...` gives the methods freedom to take extra arguments, like `steps` and `angle`. However, `...` in the `forward.turtle()` method is ignored, because we don't capture and use them inside the function. We include `...` in our methods, for the sake of consistence with the generics.
+So far turtles are stationary. We'd like to move them around, for example to `forward()` and `turn()` turtles. We can write these verbs as simple functions, but here we're going to create *generics* for them, since we will have a subclass of `turtle` later. The `UseMethod()` allows us to declare the S3 generic and dispatch on the first argument `x`. The second argument `...` gives the *methods* freedom to take extra arguments, like `steps` and `angle`. However, `...` in the `forward.turtle()` method is ignored, because we don't capture and use them inside the function. We include `...` in our methods, for the sake of consistence with the generics.
 
 ```{r}
 forward <- function(x, ...) {
@@ -185,15 +185,38 @@ forward(Sys.Date())
 
 ## Subclassing for pen-holding turtles
 
-We want our turtles to hold a pen, so that they can draw the path as they travel. Rather than creating a brand new class, we'll subclass our `turtle` class in order to reuse what we created (make life easier). We specify the class as a character vector in a specific-to-general order: `turtle_with_pen` and then `turtle`. They share the same underlying data, but `turtle_with_pen` holds some metadata (or attributes) that describe how the path to be drawn in terms of colour and thickness.
+We want our turtles to hold a pen, so that they can draw the path as they travel. Rather than creating a brand new class, we'll subclass our `turtle` class in order to reuse what we created and make life easier. It's worth revisiting the `new_turtle()` constructor to allow for subclassing. Two new arguments `...` and `class` are introduced in the parent constructor `new_turtle()`. Class-specific attributes will be passed to the new class via `...`. Note that the `class` should be specified as a character vector in a *specific-to-general* order, that is `turtle_with_pen` (specific) and `turtle` (general).
+
+```{r}
+new_turtle <- function(x = double(), y = double(), orientation = double(),
+                       path = list(), ..., class = character()) {
+  vec_assert(x, double())
+  vec_assert(y, double())
+  vec_assert(orientation, double())
+  stopifnot(is.list(path))
+  
+  new_rcrd(list(
+    "x" = x, "y" = y,
+    "orientation" = orientation, 
+    "path" = path
+  ), ..., class = c(class, "turtle"))
+}
+```
+
+Two classes share the same underlying data, but the subclass `turtle_with_pen` holds some *metadata* (or attributes) that describe how the path to be drawn in terms of colour and thickness.
 
 ```{r}
 turtle_with_pen <- function(x = turtle(), colour = "steelblue", thickness = 1,
                             on = FALSE) {
-  new_rcrd(vec_data(x),
+  stopifnot(inherits(x, "turtle"))
+  data <- vec_data(x)
+  new_turtle(
+    x = data[["x"]], y = data[["y"]], orientation = data[["orientation"]],
+    path = data[["path"]],
     "colour" = colour, "thickness" = thickness, "on" = on, 
-    class = c("turtle_with_pen", "turtle"))
+    class = "turtle_with_pen")
 }
+
 turtle_with_pen(x)
 ```
 
@@ -223,7 +246,7 @@ print.turtle_with_pen <- function(x, ...) {
 turtle_with_pen(x)
 ```
 
-It looks like stationary turtles are being displayed again. The reason is that the default `on = FALSE` directs to calling `NextMethod()`, which essentially calls `print.turtle()`. We should have switched them `on` in the first place. Our pen-holding turtles inherit `forward()` and `turn()` behaviours from `turtle`, and conduct a hexagonal walk. 
+It looks like stationary turtles are being displayed again. The reason is that the default `on = FALSE` directs to calling `NextMethod()`, which essentially calls `print.turtle()` (the next available method for the "turtle" class hierarchy). We should have switched them `on` in the first place. Our pen-holding turtles inherit `forward()` and `turn()` behaviours from `turtle`, and conduct a hexagonal walk. 
 
 ```{r eval = FALSE}
 turtle_with_pen(x, colour = "#006d2c", on = TRUE) %>% 

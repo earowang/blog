@@ -41,7 +41,7 @@ tags: ["r", "S3"]
 }
 new_turtle()</code></pre>
 <pre><code>#&gt; &lt;turtle[0]&gt;</code></pre>
-<p>We’ve got a prototype of <code>turtle</code> working by calling <code>new_turtle()</code>, an empty container with no turtles. When we supply arguments into <code>new_turtle()</code>, oops, this turtle refuses to hang out, because we forget to put cosmetics on them.</p>
+<p>We’ve got a <em>prototype</em> of <code>turtle</code> working by calling <code>new_turtle()</code>, an empty container with no turtles. When we supply arguments into <code>new_turtle()</code>, oops, this turtle refuses to hang out, because we forget to put cosmetics on them.</p>
 <pre class="r"><code>new_turtle(x = 0, y = 0, orientation = 0, path = list(data.frame(x = 0, y = 0)))</code></pre>
 <pre><code>#&gt; &lt;turtle[1]&gt;</code></pre>
 <pre><code>#&gt; Error: `format.turtle()` not implemented.</code></pre>
@@ -131,7 +131,7 @@ unique(x)</code></pre>
 </div>
 <div id="defining-turtles-travelling-verbs" class="section level2">
 <h2>Defining turtle’s travelling verbs</h2>
-<p>So far turtles are stationary. We’d like to move them around, for example to <code>forward()</code> and <code>turn()</code> turtles. We can write these verbs as simple functions, but here we’re going to create generics for them, since we will have a subclass of <code>turtle</code> later. The <code>UseMethod()</code> allows us to declare the S3 generic and dispatch on the first argument <code>x</code>. The second argument <code>...</code> gives the methods freedom to take extra arguments, like <code>steps</code> and <code>angle</code>. However, <code>...</code> in the <code>forward.turtle()</code> method is ignored, because we don’t capture and use them inside the function. We include <code>...</code> in our methods, for the sake of consistence with the generics.</p>
+<p>So far turtles are stationary. We’d like to move them around, for example to <code>forward()</code> and <code>turn()</code> turtles. We can write these verbs as simple functions, but here we’re going to create <em>generics</em> for them, since we will have a subclass of <code>turtle</code> later. The <code>UseMethod()</code> allows us to declare the S3 generic and dispatch on the first argument <code>x</code>. The second argument <code>...</code> gives the <em>methods</em> freedom to take extra arguments, like <code>steps</code> and <code>angle</code>. However, <code>...</code> in the <code>forward.turtle()</code> method is ignored, because we don’t capture and use them inside the function. We include <code>...</code> in our methods, for the sake of consistence with the generics.</p>
 <pre class="r"><code>forward &lt;- function(x, ...) {
   UseMethod(&quot;forward&quot;)
 }
@@ -183,13 +183,32 @@ forward(Sys.Date())</code></pre>
 </div>
 <div id="subclassing-for-pen-holding-turtles" class="section level2">
 <h2>Subclassing for pen-holding turtles</h2>
-<p>We want our turtles to hold a pen, so that they can draw the path as they travel. Rather than creating a brand new class, we’ll subclass our <code>turtle</code> class in order to reuse what we created (make life easier). We specify the class as a character vector in a specific-to-general order: <code>turtle_with_pen</code> and then <code>turtle</code>. They share the same underlying data, but <code>turtle_with_pen</code> holds some metadata (or attributes) that describe how the path to be drawn in terms of colour and thickness.</p>
+<p>We want our turtles to hold a pen, so that they can draw the path as they travel. Rather than creating a brand new class, we’ll subclass our <code>turtle</code> class in order to reuse what we created and make life easier. It’s worth revisiting the <code>new_turtle()</code> constructor to allow for subclassing. Two new arguments <code>...</code> and <code>class</code> are introduced in the parent constructor <code>new_turtle()</code>. Class-specific attributes will be passed to the new class via <code>...</code>. Note that the <code>class</code> should be specified as a character vector in a <em>specific-to-general</em> order, that is <code>turtle_with_pen</code> (specific) and <code>turtle</code> (general).</p>
+<pre class="r"><code>new_turtle &lt;- function(x = double(), y = double(), orientation = double(),
+                       path = list(), ..., class = character()) {
+  vec_assert(x, double())
+  vec_assert(y, double())
+  vec_assert(orientation, double())
+  stopifnot(is.list(path))
+  
+  new_rcrd(list(
+    &quot;x&quot; = x, &quot;y&quot; = y,
+    &quot;orientation&quot; = orientation, 
+    &quot;path&quot; = path
+  ), ..., class = c(class, &quot;turtle&quot;))
+}</code></pre>
+<p>Two classes share the same underlying data, but the subclass <code>turtle_with_pen</code> holds some <em>metadata</em> (or attributes) that describe how the path to be drawn in terms of colour and thickness.</p>
 <pre class="r"><code>turtle_with_pen &lt;- function(x = turtle(), colour = &quot;steelblue&quot;, thickness = 1,
                             on = FALSE) {
-  new_rcrd(vec_data(x),
+  stopifnot(inherits(x, &quot;turtle&quot;))
+  data &lt;- vec_data(x)
+  new_turtle(
+    x = data[[&quot;x&quot;]], y = data[[&quot;y&quot;]], orientation = data[[&quot;orientation&quot;]],
+    path = data[[&quot;path&quot;]],
     &quot;colour&quot; = colour, &quot;thickness&quot; = thickness, &quot;on&quot; = on, 
-    class = c(&quot;turtle_with_pen&quot;, &quot;turtle&quot;))
+    class = &quot;turtle_with_pen&quot;)
 }
+
 turtle_with_pen(x)</code></pre>
 <pre><code>#&gt; &lt;turtle_with_pen[3]&gt;
 #&gt; 🐢 located at (0, 0); facing 0 degrees
@@ -221,7 +240,7 @@ turtle_with_pen(x)</code></pre>
 #&gt; 🐢 located at (0, 0); facing 0 degrees
 #&gt; 🐢 located at (0, 0); facing 0 degrees
 #&gt; 🐢 located at (0, 0); facing 0 degrees</code></pre>
-<p>It looks like stationary turtles are being displayed again. The reason is that the default <code>on = FALSE</code> directs to calling <code>NextMethod()</code>, which essentially calls <code>print.turtle()</code>. We should have switched them <code>on</code> in the first place. Our pen-holding turtles inherit <code>forward()</code> and <code>turn()</code> behaviours from <code>turtle</code>, and conduct a hexagonal walk.</p>
+<p>It looks like stationary turtles are being displayed again. The reason is that the default <code>on = FALSE</code> directs to calling <code>NextMethod()</code>, which essentially calls <code>print.turtle()</code> (the next available method for the “turtle” class hierarchy). We should have switched them <code>on</code> in the first place. Our pen-holding turtles inherit <code>forward()</code> and <code>turn()</code> behaviours from <code>turtle</code>, and conduct a hexagonal walk.</p>
 <pre class="r"><code>turtle_with_pen(x, colour = &quot;#006d2c&quot;, on = TRUE) %&gt;% 
   turn(angle = 90) %&gt;% 
   forward(steps = 3) %&gt;%
