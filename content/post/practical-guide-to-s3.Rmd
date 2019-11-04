@@ -156,7 +156,7 @@ turn.turtle <- function(x, angle = 0, ...) {
 }
 ```
 
-We try out if our turtles are able to move in the direction as instructed. The `forward()` and `turn()` methods have been vectorised to have many turtles travel at the same time. Two turtles start at origins and stop at different places.
+We try out if our turtles are able to move in the direction as instructed. The `forward()` and `turn()` methods have been vectorised to have many turtles travel at the same time. The following code chunk shows two turtles start at origins and stop at different places.
 
 ```{r}
 library(magrittr)
@@ -220,7 +220,7 @@ turtle_with_pen <- function(x = turtle(), colour = "steelblue", thickness = 1,
 turtle_with_pen(x)
 ```
 
-When we `print()` our pen-holding turtles, we are no longer satisfied with stationary turtles `r emo::ji("turtle")`. We are interested in showing animated turtles instead. This can be done by associating `print()` method to `turtle_with_pen`. 
+When we `print()` our pen-holding turtles, we are no more satisfied with stationary turtles `r emo::ji("turtle")`. We are interested in showing animated turtles instead. This can be done by associating `print()` method to `turtle_with_pen`. 
 
 ```{r}
 print.turtle_with_pen <- function(x, ...) {
@@ -246,7 +246,7 @@ print.turtle_with_pen <- function(x, ...) {
 turtle_with_pen(x)
 ```
 
-It looks like stationary turtles are being displayed again. The reason is that the default `on = FALSE` directs to calling `NextMethod()`, which essentially calls `print.turtle()` (the next available method for the "turtle" class hierarchy). We should have switched them `on` in the first place. Our pen-holding turtles inherit `forward()` and `turn()` behaviours from `turtle`, and conduct a hexagonal walk. 
+It looks like stationary turtles are being displayed again. The reason is that the default `on = FALSE` directs to calling `NextMethod()`, which essentially calls `print.turtle()` (the next available method for the "turtle" class hierarchy). We should have switched them `on` in the first place. Our pen-holding turtles *inherit* `forward()` and `turn()` behaviours from `turtle`, and conduct a hexagonal walk. 
 
 ```{r eval = FALSE}
 turtle_with_pen(x, colour = "#006d2c", on = TRUE) %>% 
