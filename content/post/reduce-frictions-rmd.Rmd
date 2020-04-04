@@ -9,7 +9,7 @@ tags: ["r", "rmarkdown"]
 knitr::opts_chunk$set(comment = "#>")
 ```
 
-I write my thesis in [R Markdown](https://bookdown.org/yihui/rmarkdown/), with [bookdown](https://bookdown.org/yihui/bookdown/). Each chapter is a standalone paper, with the pdf output in mind initially. When I assembled them together for the thesis, I hoped `bookdown::gitbook` should just work. In contrast to the nice pdf, the compiling for html complained bitterly: images not shown, `??` in cross-references, and etc. While fixing bits and pieces, I've learned several tips to lubricate this process.
+I write my thesis in [R Markdown](https://bookdown.org/yihui/rmarkdown/), with [bookdown](https://bookdown.org/yihui/bookdown/). Each chapter is a standalone paper, with the pdf output in mind initially. When I assembled them together for the thesis, I hoped `bookdown::gitbook` should just work. In contrast to the nice pdf, the compiling for html complained bitterly: images not shown, `??` in cross-references, etc. While fixing bits and pieces, I've learned several tips to lubricate this process.
 
 ## Automatic switch between png and pdf for external figures with `knitr.graphics.auto_pdf = TRUE`
 
