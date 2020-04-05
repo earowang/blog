@@ -1,0 +1,99 @@
+---
+title: "Calibrating time zones: an early bird or a night owl?"
+date: "2020-04-05"
+output: blogdown::html_page
+tags: ["r", "lubridate"]
+---
+
+
+
+<p>I studied my step data while in self-quarantine, and happened to fell into the time zone trap. The <code>#twofunctions</code> in <strong>lubridate</strong> are the rescuers: <a href="https://lubridate.tidyverse.org/reference/with_tz.htm"><code>with_tz()</code></a> and <a href="https://lubridate.tidyverse.org/reference/force_tz.html"><code>force_tz()</code></a>.</p>
+<pre class="r"><code>library(tidyverse)
+library(lubridate)</code></pre>
+<p>The first lines of data say: I’m not a night 🦉, but 👻 wandering through the dark.</p>
+<pre><code>#&gt; # A tibble: 5,458 x 2
+#&gt;    date_time           count
+#&gt;    &lt;dttm&gt;              &lt;dbl&gt;
+#&gt;  1 2018-12-31 03:00:00    26
+#&gt;  2 2018-12-31 11:00:00    11
+#&gt;  3 2018-12-31 22:00:00   764
+#&gt;  4 2018-12-31 23:00:00   913
+#&gt;  5 2019-01-01 13:00:00     9
+#&gt;  6 2019-01-01 23:00:00  2910
+#&gt;  7 2019-01-02 00:00:00  1390
+#&gt;  8 2019-01-02 01:00:00  1020
+#&gt;  9 2019-01-02 02:00:00   472
+#&gt; 10 2019-01-02 04:00:00  1220
+#&gt; # … with 5,448 more rows</code></pre>
+<hr>
+<p>The story begins with data exported in UTC and read to UTC by default. But the compact data display doesn’t speak of time zone, and we have to get it unpacked to find out.</p>
+<pre class="r"><code>tz(step_count[[&quot;date_time&quot;]])</code></pre>
+<pre><code>#&gt; [1] &quot;UTC&quot;</code></pre>
+<p>The <code>with_tz()</code> turns the clock to a new time zone, and shifts my life back to normal.</p>
+<pre class="r"><code>step_count &lt;- step_count %&gt;% 
+  mutate(date_time = with_tz(date_time, tzone = &quot;Australia/Melbourne&quot;)) %&gt;% 
+  filter(year(date_time) == 2019)
+step_count</code></pre>
+<pre><code>#&gt; # A tibble: 5,448 x 2
+#&gt;    date_time           count
+#&gt;    &lt;dttm&gt;              &lt;dbl&gt;
+#&gt;  1 2019-01-01 09:00:00   764
+#&gt;  2 2019-01-01 10:00:00   913
+#&gt;  3 2019-01-02 00:00:00     9
+#&gt;  4 2019-01-02 10:00:00  2910
+#&gt;  5 2019-01-02 11:00:00  1390
+#&gt;  6 2019-01-02 12:00:00  1020
+#&gt;  7 2019-01-02 13:00:00   472
+#&gt;  8 2019-01-02 15:00:00  1220
+#&gt;  9 2019-01-02 16:00:00  1670
+#&gt; 10 2019-01-02 17:00:00  1390
+#&gt; # … with 5,438 more rows</code></pre>
+<p>My eyebrows rise in surprise again: I’m probably 👻 from time to time.</p>
+<pre class="r"><code>step_count %&gt;% 
+  ggplot(aes(x = hour(date_time), y = count)) +
+  geom_jitter(position = position_jitter(0.3, seed = 2020), alpha = 0.5) +
+  stat_summary(fun.data = mean_cl_boot, geom = &quot;pointrange&quot;, color = &quot;red&quot;) +
+  xlab(&quot;time&quot;)</code></pre>
+<p><img src="/post/calibrate-tzones_files/figure-html/jitter-1.png" width="324" /></p>
+<p>The calendar plot (beyond heatmap) is an exploratory visualisation tool for quickly eyeballing the overalls and locating the spooky ones. The ghostly movements I found actually correspond to my conference trips last year: <code>rstudio::conf(2019L)</code> and JSM.</p>
+<pre class="r"><code>austin &lt;- seq(ymd(&quot;2019-01-15&quot;), ymd(&quot;2019-01-25&quot;), by = &quot;1 day&quot;)
+denver &lt;- seq(ymd(&quot;2019-07-28&quot;), ymd(&quot;2019-08-01&quot;), by = &quot;1 day&quot;)
+sf &lt;- seq(ymd(&quot;2019-08-02&quot;), ymd(&quot;2019-08-06&quot;), by = &quot;1 day&quot;)
+
+library(sugrrants)
+step_cal &lt;- step_count %&gt;% 
+  complete(date_time = full_seq(date_time, 3600), fill = list(count = 0)) %&gt;% 
+  mutate(
+    hour = hour(date_time), 
+    date = as_date(date_time),
+    overseas = ifelse(date %in% c(austin, denver, sf), &quot;overseas&quot;, &quot;local&quot;)
+  ) %&gt;% 
+  frame_calendar(x = hour, y = count, date = date)
+p_cal &lt;- step_cal %&gt;% 
+  ggplot(aes(x = .hour, y = .count, group = date, colour = overseas)) +
+  geom_line()
+prettify(p_cal) + theme(legend.position = &quot;bottom&quot;)</code></pre>
+<p><img src="/post/calibrate-tzones_files/figure-html/calendar-plot-1.png" width="504" /></p>
+<p>Time zones can be silent contaminators, if we don’t look at the data. Jet lag can’t disrupt my sleep that badly. The clock in those travel days should be turned around with <code>with_tz()</code>, but R inhibits multiple time zones passed to a single date-time vector. Here the <code>force_tz()</code> comes to rescue: keep the clock as is but overwritten with new time zone. The floating times are pushed back to where they should be (<code>with_tz()</code>), and get frozen in a unified time zone (<code>force_tz()</code>).</p>
+<pre class="r"><code>lock_local_time &lt;- function(x, tz) {
+  force_tz(with_tz(x, tz = tz), tzone = &quot;Australia/Melbourne&quot;)
+}
+
+local_step_count &lt;- step_count %&gt;% 
+  mutate(
+    date = as_date(date_time),
+    date_time = case_when(
+      date %in% austin ~ lock_local_time(date_time, tz = &quot;US/Central&quot;),
+      date %in% denver ~ lock_local_time(date_time, tz = &quot;US/Mountain&quot;),
+      date %in% sf ~ lock_local_time(date_time, tz = &quot;US/Pacific&quot;),
+      TRUE ~ date_time
+    )
+  )
+
+local_step_count %&gt;% 
+  ggplot(aes(x = hour(date_time), y = count)) +
+  geom_jitter(position = position_jitter(0.3, seed = 2020), alpha = 0.5) +
+  stat_summary(fun.data = mean_cl_boot, geom = &quot;pointrange&quot;, color = &quot;red&quot;) +
+  xlab(&quot;time&quot;)</code></pre>
+<p><img src="/post/calibrate-tzones_files/figure-html/jitter2-1.png" width="324" /></p>
+<p>Phew, the data finally makes sense: neither an early bird, nor a night owl. But the message is clear that I was determined to get my PhD done, because I held on to a routine (on average)! 😂</p>
